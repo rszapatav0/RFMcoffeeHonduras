@@ -1,0 +1,10 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+00_documentation/
+01_data/
+03_tables/
+04_plots/
+05_files/
