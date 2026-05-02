@@ -1,42 +1,28 @@
-library(dplyr)
-library(readxl)
-library(purrr)
-library(tidyr)
-library(stringr)  # For string detection
+# Loading Packages
+packageList <- c("dplyr", "readxl", "purrr", "tidyr", "tidyr", "stringr")
+lapply(packageList,require,character.only=TRUE)
 
-
-# classify_variables_by_tab -----------------------------------------------
 # Function to identify variables inside each spreadsheet 
-classify_variables_by_tab <- function(excel_path, dictionary_path, output_path) {
+classify_variables_by_tab <- function(data_path, dictionary_path, output_path) {
   
   # Load the dictionary
-  dictionary <- read_excel(dictionary_path)
-  
-  # Get the names of all sheets (tabs) in the Excel file
-  sheet_names <- excel_sheets(excel_path)
-  
-  # Initialize a Tab column in the dictionary as an empty string
-  dictionary <- dictionary %>%
+  dictionary <- read_excel(dictionary_path) %>%
+    ## Initialize a Tab column in the dictionary as an empty string
     mutate(Tab = "")
   
-  # Function to read a sheet and return the column names
-  get_column_names <- function(sheet_name) {
-    df <- read_excel(excel_path, sheet = sheet_name, n_max = 1)  # Read only the first row to get the column names
-    column_names <- colnames(df)
-    return(column_names)
-  }
+  # Get the names of all sheets (tabs) in the Data file
+  sheet_names <- excel_sheets(data_path)
   
-  # Iterate through each sheet and classify variables by tab
+  # Loop by sheet
   for (sheet_name in sheet_names) {
-    # Skip the "Encuesta de Línea Intermedia..." tab
+    ## Skip the "Encuesta de Linea Intermedia..." tab
     if (sheet_name == "Encuesta de Línea Intermedia...") {
       next
     }
-    
+    ## Reading sheet variables
     cat("\nProcessing Sheet:", sheet_name, "\n")
-    column_names <- get_column_names(sheet_name)
-    
-    # Update the Tab column in the dictionary for variables found in the current sheet
+    column_names <- colnames(read_excel(data_path, sheet = sheet_name, n_max = 1))
+    ## Update the Tab column in the dictionary for variables found in the current sheet
     dictionary <- dictionary %>%
       rowwise() %>%
       mutate(Tab = if_else(any(str_detect(column_names, regex(new, ignore_case = TRUE))), sheet_name, Tab))
@@ -46,9 +32,6 @@ classify_variables_by_tab <- function(excel_path, dictionary_path, output_path) 
   write.csv(dictionary, output_path, row.names = FALSE)
 }
 
-
-# Convert columns ---------------------------------------------------------
-## convert_numeric_columns -------------------------------------------------
 # Convert all-numeric columns into numeric type
 convert_numeric_columns <- function(df) {
   for (column in names(df)) {
@@ -77,7 +60,6 @@ convert_numeric_columns <- function(df) {
   return(df)
 }
 
-## convert_to_dummies -----------------------------------------------------
 # Function to convert categorical variables to dummy variables
 convert_to_dummies <- function(df, dictionary) {
   # Iterate over each column in the dataframe
@@ -97,7 +79,7 @@ convert_to_dummies <- function(df, dictionary) {
         colnames(dummies) <- gsub(colnames(df[column]), paste0(colnames(df[column]),"_"), colnames(dummies))
         
         # Add the new dummy variables to the dataframe
-        df <- cbind(df, dummies)
+        df <- cbind(df, dummies[, !colnames(dummies) %in% names(df), drop = FALSE])
       }
     }
   }
@@ -108,7 +90,7 @@ convert_to_dummies <- function(df, dictionary) {
   return(df)
 }
 
-## convert_to_dummies_multiple --------------------------------------------
+# Function to convert dummies to multiple variables
 convert_to_dummies_multiple <- function(df, dictionary) {
   # Iterate over each column in the dataframe
   for (column in names(df)) {
@@ -135,9 +117,6 @@ convert_to_dummies_multiple <- function(df, dictionary) {
   return(df)
 }
 
-
-# Standardize -------------------------------------------------------------
-## standardize_weights ----------------------------------------------------
 # Function to standardize weights to KG
 standardize_weights <- function(df, dictionary) {
   # Function to convert the weight to green coffee weight in kgs for vector inputs
@@ -215,7 +194,6 @@ standardize_weights <- function(df, dictionary) {
   return(df)
 }
 
-## standardize_prices ----------------------------------------------------
 # Function to standardize prices to green KG
 standardize_prices <- function(df, dictionary) {
   
@@ -286,7 +264,6 @@ standardize_prices <- function(df, dictionary) {
   return(df)
 }
 
-## standardize_areas ------------------------------------------------------
 # Function to standardize areas to hectares
 standardize_areas <- function(df, dictionary) {
   
@@ -360,8 +337,7 @@ standardize_areas <- function(df, dictionary) {
   return(df)
 }
 
-## standardize_distances --------------------------------------------------
-# Function to standardize distances
+# Function to standardize distances to meters
 standardize_distances <- function(df, dictionary) {
   
   # Function to convert any distance to meters for vector inputs
@@ -424,12 +400,10 @@ standardize_distances <- function(df, dictionary) {
   return(df)
 }
 
-
-# aggregate_data ----------------------------------------------------------
 # Function to apply the desired aggregation
 aggregate_data <- function(df, dict, farm_id_col, tab_suffix) {
   
-  df <- convert_numeric_columns(df)  # Assuming this function is defined to convert appropriate columns to numeric
+  df <- convert_numeric_columns(df)
   df <- convert_to_dummies(df, dictionary)
   #df <- convert_to_dummies_multiple(df, dictionary)
 
