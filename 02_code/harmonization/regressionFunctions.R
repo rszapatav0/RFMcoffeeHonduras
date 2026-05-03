@@ -31,7 +31,7 @@ run_regression_models <- function(var_dict_file, data, output_file) {
     ))
   
   # Extracting outcome, treatment, and baseline variables based on the dictionary
-  outcome_vars <- var_dict[which(var_dict$type_column == 1), "new"]  # 1 for outcome variables
+  outcome_vars  <- var_dict[which(var_dict$type_column == 1), "new"] # 1 for outcome variables
   treatment_var <- var_dict[which(var_dict$type_column == 2), "new"] # 2 for treatment variable
   baseline_vars <- var_dict[which(var_dict$type_column == 3), "new"] # 3 for baseline variables
   

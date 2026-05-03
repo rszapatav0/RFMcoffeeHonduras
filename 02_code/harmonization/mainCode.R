@@ -1,57 +1,86 @@
-# Path --------------------------------------------------------------------
-#setwd("D:/OneDrive - CGIAR/RMI WP1/Armonizacion")
-setwd("C:/Users/feder.DESKTOP-471V2SD/OneDrive - CGIAR/RMI WP1/Armonizacion")
-#setwd("C:/Users/rszap/OneDrive - Universidad EAFIT/CIAT/RFM WP1/Armonizacion/")
+#' ------------------------------------------------------------------------
+#' Joining RFM 2023 baseline with RFM 2024 endline, and generating results
+#' Author:       Federico Ceballos
+#' Creation:     August, 2024
+#' Last edition: April, 2026
+#' This code: - Joins baseline with endline. 
+#'            - Calculate regression models
+#'            - Create graphs
+#' Input:  
+#' Output: 
+#' ------------------------------------------------------------------------
 
-library(tidyverse); library(dplyr); library(readxl); library(purrr); library(tidyr); library(stringr); library(fuzzyjoin)
 
-# Calling databases and Functions -----------------------------------------
+#' ------------------------------------------------------------------------
+# Setting up the data paths and the dictionary ----------------------------
+#' ------------------------------------------------------------------------
+
+# Loading Packages
+packageList <- c("dplyr", "readxl", "purrr", "tidyr", "stringr", "tidyverse", "fuzzyjoin")
+lapply(packageList,require,character.only=TRUE)
 rm(list=ls())
 
 #To update the dictionary (xlsx to csv)
-#dictionary <- read_excel("dictionary.xlsx")
-#write.csv(dictionary, "dictionary.csv", row.names = FALSE)
+#dictionary <- read_excel("02_code/dictionary.xlsx")
+#write.csv(dictionary, "02_code/dictionary.csv", row.names = FALSE)
 
 #To update labels treatment
-#ttmAssign_labels <- read_excel("ttmAssign_labels.xlsx", sheet = "ttmAssign2")
-#write.csv(ttmAssign_labels, "ttmAssign2.csv", row.names = FALSE)
+#ttmAssign_labels <- read_excel("01_data/raw/implementation/ttmAssign_labels.xlsx", sheet = "ttmAssign2")
+#write.csv(ttmAssign_labels, "01_data/raw/implementation/ttmAssign.csv", row.names = FALSE)
 
 # Load the required functions from the provided R scripts
-source("combineFunction.R")
-source("graphFunctions.R")
-source("regressionFunctions.R")
+source("02_code/harmonization/combineFunction.R")
+source("02_code/harmonization/graphFunctions.R")
+source("02_code/harmonization/regressionFunctions.R")
 
-# Set the file paths for the variable dictionary, data, spatial files, and output directory
-var_dict_file <- "dictionary.csv"        # Replace with actual file path
-wide_file     <- "wideDF.csv"            # Replace with actual file path
-output_dir    <- "Results"               # Replace with the actual output directory
-ttm_file      <- "ttmAssign2.csv"
-spatial_data_dep <- "Maps/hnd_admbnda_adm1_sinit_20161005.shp"
-spatial_data_mun <- "Maps/hnd_admbnda_adm2_sinit_20161005.shp"
-spatial_data_com <- "Maps/Caserios_HND.shp"
+# Set the file paths
+##Main data
+var_dict_file <- "02_code/dictionary.csv"
+baseline_path <- "01_data/processed/baseline/baselineAgg.csv"
+endline_path  <- "01_data/processed/endline/endlineAgg.csv"
+ttm_file      <- "01_data/raw/implementation/ttmAssign.csv"
+##Spatial data
+spatial_data_dep <- "01_data/maps/hnd_admbnda_adm1_sinit_20161005.shp"
+spatial_data_mun <- "01_data/maps/hnd_admbnda_adm2_sinit_20161005.shp"
+spatial_data_com <- "01_data/maps/Caserios_HND.shp"
+##Results
+long_file     <- "01_data/processed/harmonization/longDF.csv"
+wide_file     <- "01_data/processed/harmonization/wideDF.csv"
+tables_output <- "03_tables/harmonization"
+plots_output  <- "04_plots/harmonization"
+#output_dir    <- "Results"
 
-# Set the file paths for baseline and endline datasets
-baseline_path <- "Baseline/baselineAgg.csv"
-endline_path  <- "Endline/endlineAgg.csv"
 
 
-# Combine datasets --------------------------------------------------------
-# Call the combine_datasets_long function to combine the datasets
+#' ------------------------------------------------------------------------
+# Joining baseline and endline --------------------------------------------
+#' ------------------------------------------------------------------------
+
+# Function to combine the datasets
 longDF <- combine_datasets(baseline_path, endline_path,"surveyID",var_dict_file,ttm_file, combine_type = "long")
 wideDF <- combine_datasets(baseline_path, endline_path,"surveyID",var_dict_file,ttm_file, combine_type = "wide")
 
-# Now that the datasets are combined, save the combined dataset as a CSV (optional)
-write.csv(longDF, file = "longDF.csv", row.names = FALSE)
-write.csv(wideDF, file = "wideDF.csv", row.names = FALSE)
+# Save the combined dataset as a CSV (optional)
+write.csv(longDF, file = long_file, row.names = FALSE)
+write.csv(wideDF, file = wide_file, row.names = FALSE)
 
 
-# Regression models -------------------------------------------------------
-wideDF <- read.csv("wideDF.csv")
-results <- run_regression_models(var_dict_file, wideDF, "model_summaries.html")
+
+#' ------------------------------------------------------------------------
+# Regression models (wideDF) ----------------------------------------------
+#' ------------------------------------------------------------------------
+
+wideDF  <- read.csv(wide_file)
+results <- run_regression_models(
+  var_dict_file, wideDF, paste0(tables_output, "/model_summaries.html"))
 
 
-# Graphs ------------------------------------------------------------------
-longDF <- read.csv("longDF.csv")
+
+#' ------------------------------------------------------------------------
+# Graphs (longDF) ---------------------------------------------------------
+#' ------------------------------------------------------------------------
+
+longDF <- read.csv(long_file)
 colnames(longDF) <- gsub("\\.", "/", colnames(longDF))
 longDF <- longDF %>%
   mutate(farmAspectsImproved = case_when(
@@ -59,7 +88,7 @@ longDF <- longDF %>%
     farmAspectsImproved == "none" ~ 0,
     TRUE ~ 1
   ))
-generate_plots(var_dict_file, longDF, output_dir, spatial_data_dep, spatial_data_mun, spatial_data_com)
+generate_plots(var_dict_file, longDF, plots_output, spatial_data_dep, spatial_data_mun, spatial_data_com)
 
 
 # Print the completion message

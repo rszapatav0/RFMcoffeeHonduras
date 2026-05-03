@@ -131,7 +131,7 @@ generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_de
           group_by(treatment_eng, !!sym(grouping_var)) %>%
           summarise(mean_var = sum(get(var), na.rm = TRUE))
         ### Grouped bar plot
-        p <- ggplot(summary_data, aes_string(x = "treatment_eng", y= "mean_var", fill = grouping_var)) +
+        p <- ggplot(summary_data, aes_string(x = "treatment_eng", y= "mean_var", fill = "time")) +
           geom_col(position = "dodge") +
           scale_fill_viridis_d(option = "C") +  # Viridis color for categorical variables
           labs(title = paste("Gráfico de barras de", var, "\nagrupado por", grouping_var), 
