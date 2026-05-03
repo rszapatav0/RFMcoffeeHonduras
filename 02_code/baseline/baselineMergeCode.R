@@ -1,8 +1,4 @@
-# Path --------------------------------------------------------------------
-#setwd("D:/OneDrive - CGIAR/RMI WP1/Armonizacion")
-#setwd("C:/Users/feder.DESKTOP-471V2SD/OneDrive - CGIAR/RMI WP1/Armonizacion")
- setwd("C:/Users/rszap/OneDrive - Universidad EAFIT/CIAT/RFM WP1/Armonizacion/")
- rm(list=ls())
+rm(list=ls())
 
 # Dictionary --------------------------------------------------------------
 {prefixMapping <- c(
@@ -227,10 +223,10 @@
 
 
 # Functions ---------------------------------------------------------------
-library(dplyr)
-library(readxl)
-library(writexl)
-library(purrr)
+
+# Loading Packages
+packageList <- c("dplyr", "readxl", "purrr", "writexl")
+lapply(packageList,require,character.only=TRUE)
 
 # Replace column names with interpretable identifiers
 replaceColumnPrefixes <- function(dataframe, prefixMapping) {
@@ -303,7 +299,7 @@ process_tabs <- function(tab_name, baseline_files) {
 # Baseline merge ----------------------------------------------------------
 
 # Define the path to the folder containing the baseline files
-baseline_folder <- "baseline/New folder"
+baseline_folder <- "01_data/raw/baseline"
 
 # List all Excel files in the folder
 baseline_files <- list.files(path = baseline_folder, pattern = "^RM2023CAFE.*\\.xlsx$", full.names = TRUE)
@@ -315,9 +311,9 @@ sheet_names <- setdiff(sheet_names, "repeatcla")
 #      therefore is was deleted. PENDING: verify.
 
 # Initialize lists to store results
-final_merged_data <- list()
+final_merged_data           <- list()
 non_matching_columns_report <- list()
-mod_tabs_data <- list()
+mod_tabs_data               <- list()
 
 # Process each tab across all files
 for (sheet_name in sheet_names) {
@@ -422,5 +418,5 @@ final_merged_data[["tech_repeat"]] <- final_merged_data[["tech_repeat"]] %>%
 #                                                 labels = names(new_names_mapping)))
 
 # Save all tabs to a single Excel file, each as a separate sheet
-write_xlsx(final_merged_data, "Baseline/baselineRaw.xlsx")
+write_xlsx(final_merged_data, "01_data/raw/baselineRaw.xlsx")
 

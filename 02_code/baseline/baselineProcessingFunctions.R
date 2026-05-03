@@ -1,42 +1,28 @@
-library(dplyr)
-library(readxl)
-library(purrr)
-library(tidyr)
-library(stringr)  # For string detection
+# Loading Packages
+packageList <- c("dplyr", "readxl", "purrr", "tidyr", "stringr")
+lapply(packageList,require,character.only=TRUE)
 
-
-# classify_variables_by_tab -----------------------------------------------
 # Function to identify variables inside each spreadsheet 
-classify_variables_by_tab <- function(excel_path, dictionary_path, output_path) {
+classify_variables_by_tab <- function(data_path, dictionary_path, output_path) {
   
   # Load the dictionary
-  dictionary <- read_excel(dictionary_path)
-  
-  # Get the names of all sheets (tabs) in the Excel file
-  sheet_names <- excel_sheets(excel_path)
-  
-  # Initialize a Tab column in the dictionary as an empty string
-  dictionary <- dictionary %>%
+  dictionary <- read_excel(dictionary_path) %>%
+    ## Initialize a Tab column in the dictionary as an empty string
     mutate(Tab = "")
   
-  # Function to read a sheet and return the column names
-  get_column_names <- function(sheet_name) {
-    df <- read_excel(excel_path, sheet = sheet_name, n_max = 1)  # Read only the first row to get the column names
-    column_names <- colnames(df)
-    return(column_names)
-  }
+  # Get the names of all sheets (tabs) in the Excel file
+  sheet_names <- excel_sheets(data_path)
   
-  # Iterate through each sheet and classify variables by tab
+  # Loop by sheet
   for (sheet_name in sheet_names) {
     # Skip the "Encuesta de Línea Intermedia..." tab
     if (sheet_name == "mod_combined") {
       next
     }
-    
+    ## Reading sheet variables
     cat("\nProcessing Sheet:", sheet_name, "\n")
-    column_names <- get_column_names(sheet_name)
-    
-    # Update the Tab column in the dictionary for variables found in the current sheet
+    column_names <- colnames(read_excel(data_path, sheet = sheet_name, n_max = 1))
+    ## Update the Tab column in the dictionary for variables found in the current sheet
     dictionary <- dictionary %>%
       rowwise() %>%
       mutate(Tab = if_else(any(str_detect(column_names, regex(new, ignore_case = TRUE))), sheet_name, Tab))
@@ -46,8 +32,6 @@ classify_variables_by_tab <- function(excel_path, dictionary_path, output_path) 
   write.csv(dictionary, output_path, row.names = FALSE)
 }
 
-
-# convert_numeric_columns -------------------------------------------------
 # Convert all-numeric columns into numeric type
 convert_numeric_columns <- function(df, dictionary) {
   for (column in names(df)) {
@@ -76,9 +60,6 @@ convert_numeric_columns <- function(df, dictionary) {
   return(df)
 }
 
-
-# convert_to_dummies ------------------------------------------------------
-## convert_to_dummies single ----------------------------------------------
 # Function to convert categorical variables to dummy variables
 convert_to_dummies <- function(df, dictionary) {
   # Iterate over each column in the dataframe
@@ -109,7 +90,7 @@ convert_to_dummies <- function(df, dictionary) {
   return(df)
 }
 
-## convert_to_dummies_multiple --------------------------------------------
+# Function to convert dummies to multiple variables
 convert_to_dummies_multiple <- function(df, dictionary) {
   # Iterate over each column in the dataframe
   for (column in names(df)) {
@@ -136,9 +117,6 @@ convert_to_dummies_multiple <- function(df, dictionary) {
   return(df)
 }
 
-
-# Standardize -------------------------------------------------------------
-## standardize_weights ----------------------------------------------------
 # Function to standardize weights to KG
 standardize_weights <- function(df, dictionary) {
   # Function to convert the weight to green coffee weight in kgs for vector inputs
@@ -184,39 +162,92 @@ standardize_weights <- function(df, dictionary) {
   }
   
   # Standardize produced weight
-  if ("weight_produced" %in% names(dictionary)) {
-    presentation_col <- dictionary$new[dictionary$weight_produced == 1 & !is.na(dictionary$weight_produced)]
-    weight_col <- dictionary$new[dictionary$weight_produced == 2 & !is.na(dictionary$weight_produced)]
-    unit_col <- dictionary$new[dictionary$weight_produced == 3 & !is.na(dictionary$weight_produced)]
-    if (length(presentation_col) == 1 && !is.na(presentation_col) && presentation_col != "" &&
-        length(weight_col) == 1       && !is.na(weight_col)       && weight_col != ""       &&
-        length(unit_col) == 1         && !is.na(unit_col)         && unit_col != "")  {
-      if (presentation_col %in% names(df) && weight_col %in% names(df) && unit_col %in% names(df)) {
-      new_col_name <- create_standardized_col_name(weight_col, "InKgGreen")
-      df[[new_col_name]] <- convert_to_green_kgs(df[[presentation_col]], df[[weight_col]], df[[unit_col]])
-      }
-    }
-  }
+  # if ("weight_produced" %in% names(dictionary)) {
+  #   presentation_col <- dictionary$new[dictionary$weight_produced == 1 & !is.na(dictionary$weight_produced)]
+  #   weight_col <- dictionary$new[dictionary$weight_produced == 2 & !is.na(dictionary$weight_produced)]
+  #   unit_col <- dictionary$new[dictionary$weight_produced == 3 & !is.na(dictionary$weight_produced)]
+  #   if (length(presentation_col) == 1 && !is.na(presentation_col) && presentation_col != "" &&
+  #       length(weight_col) == 1       && !is.na(weight_col)       && weight_col != ""       &&
+  #       length(unit_col) == 1         && !is.na(unit_col)         && unit_col != "")  {
+  #     if (presentation_col %in% names(df) && weight_col %in% names(df) && unit_col %in% names(df)) {
+  #     new_col_name <- create_standardized_col_name(weight_col, "InKgGreen")
+  #     df[[new_col_name]] <- convert_to_green_kgs(df[[presentation_col]], df[[weight_col]], df[[unit_col]])
+  #     }
+  #   }
+  # }
   
   # Standardize sold weight
   if ("weight_sold" %in% names(dictionary)) {
     presentation_col <- dictionary$new[dictionary$weight_sold == 1 & !is.na(dictionary$weight_sold)]
-    weight_col <- dictionary$new[dictionary$weight_sold == 2 & !is.na(dictionary$weight_sold)]
-    unit_col <- dictionary$new[dictionary$weight_sold == 3 & !is.na(dictionary$weight_sold)]
-    if (length(presentation_col) == 1 && !is.na(presentation_col) && presentation_col != "" &&
-        length(weight_col) == 1       && !is.na(weight_col)       && weight_col != ""       &&
-        length(unit_col) == 1         && !is.na(unit_col)         && unit_col != "")  {
-      if (presentation_col %in% names(df) && weight_col %in% names(df) && unit_col %in% names(df)) {
+    weight_col       <- dictionary$new[dictionary$weight_sold == 2 & !is.na(dictionary$weight_sold)]
+    unit_col         <- dictionary$new[dictionary$weight_sold == 3 & !is.na(dictionary$weight_sold)]
+    if (presentation_col %in% names(df) && weight_col %in% names(df) && unit_col %in% names(df)) {
       new_col_name <- create_standardized_col_name(weight_col, "InKgGreen")
       df[[new_col_name]] <- convert_to_green_kgs(df[[presentation_col]], df[[weight_col]], df[[unit_col]])
-      }
     }
   }
   
   return(df)
 }
 
-## standardize_prices ----------------------------------------------------
+# Function to standardize weights to KG
+standardize_weights_prod <- function(df, dictionary) {
+  # Function to convert the weight to green coffee weight in kgs for vector inputs
+  convert_to_green_kgs <- function(presentation, weight, unit) {
+    conversion_factors <- c(
+      "qq"    = 100 * 0.453592,   #Quintales (100 libras)
+      "lata"  = 33 * 0.453592,    #Latas
+      "carga" = 200 * 0.453592,   #Cargas
+      "lb"    = 0.453592          #Libras
+    )
+    
+    presentation_factors <- c(
+      "cherry"                = 0.2155 * 0.8,   #Uva
+      "green"                 = 1.0000,         #Verde
+      "soaking_wet_parchment" = 0.48 * 0.8,     #Pergamino mojado
+      "dry_parchment"         = 0.8,            #Pergamino seco
+      "roasted"               = 1.19            #Tostado
+    )
+    
+    #All weights to kilograms
+    #weight_in_kgs <- weight * conversion_factors[unit]
+    weight_in_kgs <- ifelse(
+      #weight == 777, NA,
+      #ifelse(
+      unit %in% names(conversion_factors),
+      weight * conversion_factors[unit],
+      weight)
+    #)
+    #All presentations to green
+    green_coffee_weight <- ifelse(
+      presentation %in% names(presentation_factors),
+      weight_in_kgs * presentation_factors[presentation],
+      weight_in_kgs)
+    
+    return(green_coffee_weight)
+  }
+  
+  convert_to_green_kgs <- Vectorize(convert_to_green_kgs)
+  
+  # Function to create a standardized column name
+  create_standardized_col_name <- function(base_name, suffix) {
+    paste0(base_name, suffix)
+  }
+  
+  # Standardize produced weight
+  if ("weight_produced" %in% names(dictionary)) {
+    presentation_col <- dictionary$new[dictionary$weight_produced == 1 & !is.na(dictionary$weight_produced)]
+    weight_col       <- dictionary$new[dictionary$weight_produced == 2 & !is.na(dictionary$weight_produced)]
+    unit_col         <- dictionary$new[dictionary$weight_produced == 3 & !is.na(dictionary$weight_produced)]
+    if (presentation_col %in% names(df) && weight_col %in% names(df) && unit_col %in% names(df)) {
+      new_col_name <- create_standardized_col_name(weight_col, "InKgGreen")
+      df[[new_col_name]] <- convert_to_green_kgs(df[[presentation_col]], df[[weight_col]], df[[unit_col]])
+    }
+  }
+  
+  return(df)
+}
+
 # Function to standardize prices to green KG
 standardize_prices <- function(df, dictionary) {
   
@@ -266,18 +297,19 @@ standardize_prices <- function(df, dictionary) {
   # Standardize min weight
   if ("price_min" %in% names(dictionary)) {
     presentation_col <- dictionary$new[dictionary$price_min == 1 & !is.na(dictionary$price_min)]
-    price_col <- dictionary$new[dictionary$price_min == 2 & !is.na(dictionary$price_min)]
-    unit_col <- dictionary$new[dictionary$price_min == 3 & !is.na(dictionary$price_min)]
+    price_col        <- dictionary$new[dictionary$price_min == 2 & !is.na(dictionary$price_min)]
+    unit_col         <- dictionary$new[dictionary$price_min == 3 & !is.na(dictionary$price_min)]
     if (presentation_col %in% names(df) && price_col %in% names(df) && unit_col %in% names(df)) {
-        new_col_name <- create_standardized_col_name(price_col, "InKgGreen")
-        df[[new_col_name]] <- convert_to_green_kgs(df[[presentation_col]], df[[price_col]], df[[unit_col]])
+      new_col_name <- create_standardized_col_name(price_col, "InKgGreen")
+      df[[new_col_name]] <- convert_to_green_kgs(df[[presentation_col]], df[[price_col]], df[[unit_col]])
     }
   }
+  
   # Standardize min weight
   if ("price_max" %in% names(dictionary)) {
     presentation_col <- dictionary$new[dictionary$price_max == 1 & !is.na(dictionary$price_max)]
-    price_col <- dictionary$new[dictionary$price_max == 2 & !is.na(dictionary$price_max)]
-    unit_col <- dictionary$new[dictionary$price_max == 3 & !is.na(dictionary$price_max)]
+    price_col        <- dictionary$new[dictionary$price_max == 2 & !is.na(dictionary$price_max)]
+    unit_col         <- dictionary$new[dictionary$price_max == 3 & !is.na(dictionary$price_max)]
     if (presentation_col %in% names(df) && price_col %in% names(df) && unit_col %in% names(df)) {
       new_col_name <- create_standardized_col_name(price_col, "InKgGreen")
       df[[new_col_name]] <- convert_to_green_kgs(df[[presentation_col]], df[[price_col]], df[[unit_col]])
@@ -287,7 +319,6 @@ standardize_prices <- function(df, dictionary) {
   return(df)
 }
 
-## standardize_areas ------------------------------------------------------
 # Function to standardize areas to hectares
 standardize_areas <- function(df, dictionary) {
   
@@ -425,8 +456,6 @@ standardize_distances <- function(df, dictionary) {
   return(df)
 }
 
-
-# aggregate_data ----------------------------------------------------------
 # Function to apply the desired aggregation
 aggregate_data <- function(df, dict, farm_id_col, tab_suffix) {
   
