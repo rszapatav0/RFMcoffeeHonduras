@@ -469,7 +469,7 @@ checkDataQuality <- function(data) {
   print(false_indices)
   
   # 9. Check if coffee produced and coffee sold are in the ballpark of each other
-  results$ballpark <- extract_outside_ballpark(df,"amountOfCoffeeProducedLastHarvestInGreenKgs","amountSoldInKgGreen", percent=25)
+  #results$ballpark <- extract_outside_ballpark(df,"amountOfCoffeeProducedLastHarvestInGreenKgs","amountSoldInKgGreen", percent=25)
 
   return(results)
 }

@@ -16,7 +16,7 @@
 
 
 #' ------------------------------------------------------------------------
-# Setting up the endline dictionary ---------------------------------------
+# Setting up the data and the dictionary ----------------------------------
 #' ------------------------------------------------------------------------
 
 rm(list=ls())
@@ -95,10 +95,9 @@ aggregated_df <- reduce(aggregated_data, full_join, by = "_submission__uuid")
 df            <- left_join(base_df, aggregated_df,  by = c("_uuid"="_submission__uuid"))
 
 
-
 ## Step 3: Organize aggregated data ----------------------------------------
 
-#Adjusting numeric columns and creating dummies for multiple vselection variables
+#Adjusting numeric columns and creating dummies for multiple selection variables
  df <- convert_numeric_columns(df)
  df <- df %>% 
   mutate(
@@ -131,18 +130,18 @@ df <- df %>%
       is.na(coffeeAreaLastHarvestInHa_trr),       E2XC, coffeeAreaLastHarvestInHa_trr)
     ) %>%
   ### Land legal 
-     mutate(
-          `landLegalStatusForCultivation/own_land`      = if_else(
-               is.na(`landLegalStatusForCultivation/own_land`),      `landLegalStatusForCultivation/own_land_trr`, `landLegalStatusForCultivation/own_land`),
-          `landLegalStatusForCultivation/rent_in_land`  = if_else(
-               is.na(`landLegalStatusForCultivation/rent_in_land`),  `landLegalStatusForCultivation/rent_in_land_trr`,  `landLegalStatusForCultivation/rent_in_land`),
-          `landLegalStatusForCultivation/rent_out_land` = if_else(
-               is.na(`landLegalStatusForCultivation/rent_out_land`), `landLegalStatusForCultivation/rent_out_land_trr`, `landLegalStatusForCultivation/rent_out_land`),
-          `landLegalStatusForCultivation/communal_land` = if_else(
-               is.na(`landLegalStatusForCultivation/communal_land`), `landLegalStatusForCultivation/communal_land_trr`, `landLegalStatusForCultivation/communal_land`)
-          ) %>%
-     select(-c(`landLegalStatusForCultivation/own_land_trr`, `landLegalStatusForCultivation/rent_in_land_trr`,
-               `landLegalStatusForCultivation/rent_out_land_trr`, `landLegalStatusForCultivation/communal_land_trr`))
+  mutate(
+    `landLegalStatusForCultivation/own_land`      = if_else(
+      is.na(`landLegalStatusForCultivation/own_land`),      `landLegalStatusForCultivation/own_land_trr`, `landLegalStatusForCultivation/own_land`),
+    `landLegalStatusForCultivation/rent_in_land`  = if_else(
+      is.na(`landLegalStatusForCultivation/rent_in_land`),  `landLegalStatusForCultivation/rent_in_land_trr`,  `landLegalStatusForCultivation/rent_in_land`),
+    `landLegalStatusForCultivation/rent_out_land` = if_else(
+      is.na(`landLegalStatusForCultivation/rent_out_land`), `landLegalStatusForCultivation/rent_out_land_trr`, `landLegalStatusForCultivation/rent_out_land`),
+    `landLegalStatusForCultivation/communal_land` = if_else(
+      is.na(`landLegalStatusForCultivation/communal_land`), `landLegalStatusForCultivation/communal_land_trr`, `landLegalStatusForCultivation/communal_land`)
+    ) %>%
+  select(-c(`landLegalStatusForCultivation/own_land_trr`, `landLegalStatusForCultivation/rent_in_land_trr`,
+            `landLegalStatusForCultivation/rent_out_land_trr`, `landLegalStatusForCultivation/communal_land_trr`))
 
 # Creating new variables
 df$yieldKgPerHa       <- ifelse(df$coffeeAreaLastHarvestInHa_trr == 0,
@@ -159,6 +158,11 @@ df$densityPlantsPerHa <- ifelse(df$coffeeAreaLastHarvestInHa_trr == 0,
 # sum(df$totalCoffeePlantsOnFarm == 0, na.rm = TRUE) #1
 # sum(is.na(df$totalCoffeePlantsOnFarm)) #71
 
+# Rename geodata
+df <- df %>% rename(
+  Latitud = X_GPS_latitude,
+  Longitud = X_GPS_longitude
+)
 
 # Save
 write.csv(df, "01_data/processed/endline/endlineAgg.csv", row.names = FALSE)
@@ -167,6 +171,7 @@ write.csv(df, "01_data/processed/endline/endlineAgg.csv", row.names = FALSE)
 # Assessing data quality --------------------------------------------------
 #rm(list=ls())
 df <- read.csv("01_data/processed/endline/endlineAgg.csv")
-#source("02_code/harmonization/qualityCheckFunctions.R")
-#results <- checkDataQuality(df)
+source("02_code/endline/endlineQualityCheckFunctions.R")
+results <- checkDataQuality(df)
+
 
