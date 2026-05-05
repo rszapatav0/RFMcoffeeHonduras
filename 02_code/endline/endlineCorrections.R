@@ -1,9 +1,12 @@
-#' corrections.xlsx is an edited from "01_data/raw/endline/Entregable [2] 2024-09-05 Duplicados WP1 Café"
-#' para que se puedan implementar directamente las correcciones a través de código
+#' ------------------------------------------------------------------------
+# Main sheet --------------------------------------------------------------
+#' ------------------------------------------------------------------------
+#' endlineCorrections.xlsx is an edited from 
+#' "01_data/raw/endline/Entregable [2] 2024-09-05 Duplicados WP1 Café"
+#' so that corrections can be implemented directly through code.
 
-#file.copy(raw_path, data_path, overwrite = TRUE)
-#base_df    <- read_excel(data_path, sheet = "Encuesta de Línea Intermedia...")
-changes_df  <- read_excel(changes_path)
+# Reading Excel
+changes_df  <- read_excel(changes_path, sheet = "Encuesta de Línea Intermedia...")
 
 # Deleting observations
 df_delete <- base_df %>%

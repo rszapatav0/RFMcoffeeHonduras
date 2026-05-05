@@ -145,6 +145,7 @@ combine_datasets <- function(baseline_path, endline_path, id_column = "surveyID"
   # Identify columns that matched between baseline and endline
   matchedColumns <- intersect(names(baselineDF), names(endlineDF))
   cat("Columns that matched between baseline and endline:\n", paste(matchedColumns, collapse = ", "), "\n")
+  print(length(matchedColumns))
   
   # Identify unmatched columns and print them
   unmatchedBaselineCols <- setdiff(names(baselineDF), names(endlineDF))
@@ -152,10 +153,12 @@ combine_datasets <- function(baseline_path, endline_path, id_column = "surveyID"
   
   if (length(unmatchedBaselineCols) > 0) {
     cat("Columns in baseline not in endline:\n", paste(unmatchedBaselineCols, collapse = ", "), "\n")
+    print(length(unmatchedBaselineCols))
   }
   
   if (length(unmatchedEndlineCols) > 0) {
     cat("Columns in endline not in baseline:\n", paste(unmatchedEndlineCols, collapse = ", "), "\n")
+    print(length(unmatchedEndlineCols))
   }
   
   ### Handle wide or long format based on 'combine_type' parameter ###

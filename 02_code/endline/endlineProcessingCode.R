@@ -2,10 +2,10 @@
 #' Processing the RFM 2024 endline survey data
 #' Author:       Federico Ceballos
 #' Creation:     August, 2024
-#' Last edition: April, 2026
+#' Last edition: May, 2026
+#' Editor:       Raquel Sofía
+#' 
 #' This code: Processes the Endline database. 
-#'            It joins the variables inside loops by operating them (average, 
-#'            mode, ifany...) and charge some corrections for the data.
 #'            
 #' Input:  - File "endlineRaw.xlsx", which is a copy from 
 #'         "Encuesta_de_Línea_Intermedia_Piloto_Transformando_Mercados_de_Café_-_all_versions_-_Español_es_-_2024-09-17-17-43-42"
@@ -26,7 +26,7 @@ source("02_code/endline/endlineProcessingFunctions.R")
 
 # Defining file paths
 data_path       <- "01_data/raw/endline/endlineRaw.xlsx"
-changes_path    <- "01_data/processed/endline/corrections.xlsx"
+changes_path    <- "01_data/processed/endline/endlineCorrections.xlsx"
 dictionary_path <- "02_code/dictionary.xlsx"
 output_path     <- "02_code/dictionary.csv"
 
@@ -67,7 +67,7 @@ for (tab in names(tabs)) {
 base_df <- read_excel(data_path, sheet = "Encuesta de Línea Intermedia...")
 
 # Making corrections
-source("02_code/endline/corrections.R")
+source("02_code/endline/endlineCorrections.R")
 
 
 ## Step 2: Do aggregate_data function for each Tab and join ---------------
@@ -98,8 +98,8 @@ df            <- left_join(base_df, aggregated_df,  by = c("_uuid"="_submission_
 ## Step 3: Organize aggregated data ----------------------------------------
 
 #Adjusting numeric columns and creating dummies for multiple selection variables
- df <- convert_numeric_columns(df)
- df <- df %>% 
+df <- convert_numeric_columns(df)
+df <- df %>% 
   mutate(
     E2XC = as.numeric(E2XC),
     E3XC = as.numeric(E3XC),
@@ -112,9 +112,9 @@ existing_binary_vars <- intersect(binary_vars, names(df))
 df <- df %>% mutate(
  across(all_of(existing_binary_vars), ~ ifelse(. %in% c("Y", "y", "yes", 1), 1, 0)))
 
-# Standardize weights and distances
-df <- standardize_weights(df, dictionary)
+# Standardize weights, distances and production
 df <- standardize_distances(df, dictionary)
+df <- standardize_weights_prod(df, dictionary)
 colnames(df)
 
 # Fixing version problems
@@ -143,35 +143,38 @@ df <- df %>%
   select(-c(`landLegalStatusForCultivation/own_land_trr`, `landLegalStatusForCultivation/rent_in_land_trr`,
             `landLegalStatusForCultivation/rent_out_land_trr`, `landLegalStatusForCultivation/communal_land_trr`))
 
+# Rename geodata
+df <- df %>% rename(
+  Latitud = '_GPS_latitude',
+  Longitud = '_GPS_longitude'
+)
+
+
+## Step 4: Organizing variables for the merge with baseline -----------------
+
+# Amount sold vs produced
+## Sold > Produced -> Replace Produced by sold
+table(df$amountOfCoffeeProducedLastHarvestInKgGreen < df$amountSoldInKgGreen_typ_buy)
+# df_filtered <- df %>%
+#   filter(amountOfCoffeeProducedLastHarvestInKgGreen < amountSoldInKgGreen_typ_buy) %>%
+#   select(c(amountOfCoffeeProducedLastHarvestInKgGreen, amountSoldInKgGreen_typ_buy, typeOfCoffeeProduced,
+#            coffeeProductionMeasurementUnit, amountOfCoffeeProducedLastHarvest))
+
 # Creating new variables
 df$yieldKgPerHa       <- ifelse(df$coffeeAreaLastHarvestInHa_trr == 0,
   NA, df$amountOfCoffeeProducedLastHarvestInKgGreen / df$coffeeAreaLastHarvestInHa_trr)
 df$densityPlantsPerHa <- ifelse(df$coffeeAreaLastHarvestInHa_trr == 0,
   NA, df$totalCoffeePlantsOnFarm / df$coffeeAreaLastHarvestInHa_trr)
 
-# summary(df$yieldKgPerHa)
-# summary(df$densityPlantsPerHa)
-# sum(df$coffeeAreaLastHarvestInHa_trr == 0, na.rm = TRUE) #2
-# sum(is.na(df$coffeeAreaLastHarvestInHa_trr)) #71
-# sum(df$amountOfCoffeeProducedLastHarvestInKgGreen == 0, na.rm = TRUE) #0
-# sum(is.na(df$amountOfCoffeeProducedLastHarvestInKgGreen)) #80
-# sum(df$totalCoffeePlantsOnFarm == 0, na.rm = TRUE) #1
-# sum(is.na(df$totalCoffeePlantsOnFarm)) #71
-
-# Rename geodata
-df <- df %>% rename(
-  Latitud = X_GPS_latitude,
-  Longitud = X_GPS_longitude
-)
-
 # Save
 write.csv(df, "01_data/processed/endline/endlineAgg.csv", row.names = FALSE)
 
 
 # Assessing data quality --------------------------------------------------
-#rm(list=ls())
+rm(list=ls())
 df <- read.csv("01_data/processed/endline/endlineAgg.csv")
 source("02_code/endline/endlineQualityCheckFunctions.R")
 results <- checkDataQuality(df)
 
-
+saveRDS(results, file="03_tables/endline/endlineQualityCheck.RData")
+#results <- readRDS("03_tables/baseline/baselineQualityCheck.RData")

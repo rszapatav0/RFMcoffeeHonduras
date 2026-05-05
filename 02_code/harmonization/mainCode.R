@@ -2,12 +2,12 @@
 #' Joining RFM 2023 baseline with RFM 2024 endline, and generating results
 #' Author:       Federico Ceballos
 #' Creation:     August, 2024
-#' Last edition: April, 2026
+#' Last edition: May, 2026
+#' Editor:       Raquel Sofía
+#' 
 #' This code: - Joins baseline with endline. 
 #'            - Calculate regression models
 #'            - Create graphs
-#' Input:  
-#' Output: 
 #' ------------------------------------------------------------------------
 
 
@@ -16,13 +16,14 @@
 #' ------------------------------------------------------------------------
 
 # Loading Packages
-packageList <- c("dplyr", "readxl", "purrr", "tidyr", "stringr", "tidyverse", "fuzzyjoin")
+packageList <- c("dplyr", "readxl", "purrr", "tidyr", 
+                 "stringr", "tidyverse", "fuzzyjoin")
 lapply(packageList,require,character.only=TRUE)
 rm(list=ls())
 
 #To update the dictionary (xlsx to csv)
-#dictionary <- read_excel("02_code/dictionary.xlsx")
-#write.csv(dictionary, "02_code/dictionary.csv", row.names = FALSE)
+dictionary <- read_excel("02_code/dictionary.xlsx")
+write.csv(dictionary, "02_code/dictionary.csv", row.names = FALSE)
 
 #To update labels treatment
 #ttmAssign_labels <- read_excel("01_data/raw/implementation/ttmAssign_labels.xlsx", sheet = "ttmAssign2")
@@ -30,8 +31,8 @@ rm(list=ls())
 
 # Load the required functions from the provided R scripts
 source("02_code/harmonization/combineFunction.R")
-source("02_code/harmonization/graphFunctions.R")
 source("02_code/harmonization/regressionFunctions.R")
+source("02_code/harmonization/graphFunctions.R")
 
 # Set the file paths
 ##Main data
@@ -57,11 +58,17 @@ plots_output  <- "04_plots/harmonization"
 #' ------------------------------------------------------------------------
 
 # Function to combine the datasets
+## LongDF
 longDF <- combine_datasets(baseline_path, endline_path,"surveyID",var_dict_file,ttm_file, combine_type = "long")
-wideDF <- combine_datasets(baseline_path, endline_path,"surveyID",var_dict_file,ttm_file, combine_type = "wide")
-
-# Save the combined dataset as a CSV (optional)
 write.csv(longDF, file = long_file, row.names = FALSE)
+
+## WideDF
+wideDF <- combine_datasets(baseline_path, endline_path,"surveyID",var_dict_file,ttm_file, combine_type = "wide")
+wideDF <- wideDF %>%
+  rename(
+    totalFarmAreaInHa_trr_baseline = totalParcelAreaInHa_trr,
+    totalAreaUsedForAgricultureInHa_trr_baseline = totalAreaUsedForAgricultureInHa, 
+    coffeeAreaLastHarvestInHa_trr_baseline       = coffeeAreaLastHarvestInHa)
 write.csv(wideDF, file = wide_file, row.names = FALSE)
 
 
@@ -73,7 +80,6 @@ write.csv(wideDF, file = wide_file, row.names = FALSE)
 wideDF  <- read.csv(wide_file)
 results <- run_regression_models(
   var_dict_file, wideDF, paste0(tables_output, "/model_summaries.html"))
-
 
 
 #' ------------------------------------------------------------------------

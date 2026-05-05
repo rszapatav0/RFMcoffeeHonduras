@@ -1,9 +1,9 @@
-library(ggplot2)
-library(dplyr)
-library(sf) # For spatial data (choropleth maps)
+# Loading Packages
+packageList <- c("dplyr", "maps", "ggplot2", "sf", "scales", "viridis", "fuzzyjoin")
+lapply(packageList,require,character.only=TRUE)
+
 library(scales) # For donut chart scaling
 library(viridis) # For Viridis color palettes
-library(maps) # Honduras map
 library(fuzzyjoin) #Fuzzy join
 
 # Custom function to generate plots based on a dictionary

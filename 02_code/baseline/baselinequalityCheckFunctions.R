@@ -2,7 +2,7 @@
 # Function to find columns with suffixed
 find_columns_with_suffixes <- function(df) {
   # Define the suffixes to look for
-  suffixes <- c("PerHectares", "InHectares_trr", "InGreenKgs", "KgGreen", "InGreenKgs_typ_buy") #!!!!!!!!!!!!!!!!!!!!
+  suffixes <- c("InHa", "InHa_trr", "PerHa", "InKgGreen", "InKgGreen_typ_buy")
   
     # Create a regular expression pattern to match these suffixes
   pattern <- paste0(suffixes, "$", collapse = "|")
@@ -43,15 +43,15 @@ checkIfRelevantThenAnswered <- function(data, condition_question_pairs) {
 check_points_in_polygon <- function(df) {
   library(sf)
   # Read the shapefile
-  #polygon_sf <- st_read("C:/Users/feder.DESKTOP-471V2SD/OneDrive - CGIAR/RMI WP1/Baseline survey data/Maps/hnd_admbnda_adm3_sinit_20161005.shp")   #!!!!!!!!!!!!!!!!!!!!!!!!!
+  #polygon_sf <- st_read("C:/Users/feder.DESKTOP-471V2SD/OneDrive - CGIAR/RMI WP1/Baseline survey data/Maps/hnd_admbnda_adm3_sinit_20161005.shp")
   polygon_sf <- st_read("01_data/maps/hnd_admbnda_adm3_sinit_20161005.shp")
   
-  #municipalities <- c("La Union", "San Francisco de Ojuera", "San Nicolas", "El Nispero", "Arada", "San Rafael", "Atima", "Santa Rita", "La Iguala")   #!!!!!!!!!!!!!!!!!!!!!!!!!
+  #municipalities <- c("La Union", "San Francisco de Ojuera", "San Nicolas", "El Nispero", "Arada", "San Rafael", "Atima", "Santa Rita", "La Iguala")
   municipalities <- c("La Union", "San Francisco de Ojuera", "San Nicolas", "El Nispero", "Arada", "San Rafael", "Atima", "Santa Rita", "La Iguala", "Victoria", "Yoro", "Yorito")
   
   # Subset the shapefile for specified municipalities
   if (!is.null(municipalities)) {
-    #polygon_sf <- polygon_sf[polygon_sf$admin1Name %in% c("Lempira", "Santa Barbara") & polygon_sf$admin2Name %in% municipalities, ]   #!!!!!!!!!!!!!!!!!!!!!!!!!
+    #polygon_sf <- polygon_sf[polygon_sf$admin1Name %in% c("Lempira", "Santa Barbara") & polygon_sf$admin2Name %in% municipalities, ]
     polygon_sf <- polygon_sf[polygon_sf$admin1Name %in% c("Lempira", "Santa Barbara", "Yoro") & polygon_sf$admin2Name %in% municipalities, ]
   }
   
@@ -344,8 +344,11 @@ checkDataQuality <- function(data) {
             return(upper_bound)
        }
   })
+  names(results$outliers) <- key_variables
+  names(results$lower_bound) <- key_variables
+  names(results$upper_bound) <- key_variables
   
-  # 3. Check if a relevant question was answered   #!!!!!!!!!!!!!!!!!!!!!!!!!
+  # 3. Check if a relevant question was answered
   {condition_question_pairs <- list(
        #list(condition = "triedFormalCredit == 'Y'", question = "accessedFormalCredit"),
        list(condition = "usesWhatsAppForMessages == 'N'", question = "alternativeCommunicationMeans"),
@@ -427,7 +430,7 @@ checkDataQuality <- function(data) {
   )  }
   #results$relevant_unanswered <- checkIfRelevantThenAnswered(data, condition_question_pairs)
   
-  # 4.Check if constraint was respected   #!!!!!!!!!!!!!!!!!!!!!!!!!
+  # 4.Check if constraint was respected
   {  constraints_list <- list(
        list(column = 'accessedCreditOrLoan', constraint = 'df$accessedCreditOrLoan>=0 & df$accessedCreditOrLoan<=30'),
        list(column = 'commMigrate', constraint = 'df$commMigrate<=df$commSize'),
@@ -450,9 +453,9 @@ checkDataQuality <- function(data) {
   results$constraintComply <- check_all_constraints(data,constraints_list)
   
   # 5. Check if the responses to select_one and select_multiple are valid
-  #load("choiceMapping.RData")   #!!!!!!!!!!!!!!!!!!!!!!!!!
-  #choiceMapping <- remove_accents_from_list(choiceMapping, removeSpanishAccents)   #!!!!!!!!!!!!!!!!!!!!!!!!!
-  #results$correctChoice <- validate_and_tabulate_invalid_responses_with_suffixes(df,choiceMapping)   #!!!!!!!!!!!!!!!!!!!!!!!!!
+  #load("choiceMapping.RData")
+  #choiceMapping <- remove_accents_from_list(choiceMapping, removeSpanishAccents)
+  #results$correctChoice <- validate_and_tabulate_invalid_responses_with_suffixes(df,choiceMapping)
   
   # 6. Check that names are correct
   results$correctName  <- extract_invalid_respondent_names(df)

@@ -1,6 +1,20 @@
+#' ------------------------------------------------------------------------
+#' Aggregating the subfiles for the RFM 2023 baseline survey data
+#' Author:       Federico Ceballos
+#' Creation:     August, 2024
+#' Last edition: May, 2026
+#' Editor:       Raquel Sofía
+#' 
+#' This code:    Processes the Baseline database from RM203CAFEV#.xlsx to 
+#'               baselineRaw.xlsx
+#' ------------------------------------------------------------------------
+
+#' ------------------------------------------------------------------------
+# Setting up names mapping ------------------------------------------------
+#' ------------------------------------------------------------------------
+
 rm(list=ls())
 
-# Dictionary --------------------------------------------------------------
 {prefixMapping <- c(
   "A2" = "surveyDate",
   "A4" = "department",
@@ -222,7 +236,10 @@ rm(list=ls())
 )}
 
 
-# Functions ---------------------------------------------------------------
+
+#' ------------------------------------------------------------------------
+# Creating functions ------------------------------------------------------
+#' ------------------------------------------------------------------------
 
 # Loading Packages
 packageList <- c("dplyr", "readxl", "purrr", "writexl")
@@ -296,7 +313,12 @@ process_tabs <- function(tab_name, baseline_files) {
 }
 
 
+
+#' ------------------------------------------------------------------------
 # Baseline merge ----------------------------------------------------------
+#' ------------------------------------------------------------------------
+
+## Main process -----------------------------------------------------------
 
 # Define the path to the folder containing the baseline files
 baseline_folder <- "01_data/raw/baseline"
@@ -335,6 +357,9 @@ if (length(mod_tabs_data) > 0) {
   mod_merged_data <- reduce(mod_tabs_data, full_join, by = "ID_ENCUESTA")
   final_merged_data[["mod_combined"]] <- mod_merged_data
 }
+
+
+## Adjustments ------------------------------------------------------------
 
 # Change some variables values
 final_merged_data[["sales_process_repeat"]] <- final_merged_data[["sales_process_repeat"]] %>%

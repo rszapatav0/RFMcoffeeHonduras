@@ -186,6 +186,64 @@ standardize_weights <- function(df, dictionary) {
   return(df)
 }
 
+# Function to standardize weights to KG
+standardize_weights_prod <- function(df, dictionary) {
+  # Function to convert the weight to green coffee weight in kgs for vector inputs
+  convert_to_green_kgs <- function(presentation, weight, unit) {
+    conversion_factors <- c(
+      "qq"    = 100 * 0.453592,   #Quintales (100 libras)
+      "lata"  = 33 * 0.453592,    #Latas
+      "carga" = 200 * 0.453592,   #Cargas
+      "lb"    = 0.453592          #Libras
+    )
+    
+    presentation_factors <- c(
+      "cherry"                = 0.2155 * 0.8,   #Uva
+      "green"                 = 1.0000,         #Verde
+      "soaking_wet_parchment" = 0.48 * 0.8,     #Pergamino mojado
+      "dry_parchment"         = 0.8,            #Pergamino seco
+      "roasted"               = 1.19            #Tostado
+    )
+    
+    #All weights to kilograms
+    #weight_in_kgs <- weight * conversion_factors[unit]
+    weight_in_kgs <- ifelse(
+      #weight == 777, NA,
+      #ifelse(
+      unit %in% names(conversion_factors),
+      weight * conversion_factors[unit],
+      weight)
+    #)
+    #All presentations to green
+    green_coffee_weight <- ifelse(
+      presentation %in% names(presentation_factors),
+      weight_in_kgs * presentation_factors[presentation],
+      weight_in_kgs)
+    
+    return(green_coffee_weight)
+  }
+  
+  convert_to_green_kgs <- Vectorize(convert_to_green_kgs)
+  
+  # Function to create a standardized column name
+  create_standardized_col_name <- function(base_name, suffix) {
+    paste0(base_name, suffix)
+  }
+  
+  # Standardize produced weight
+  if ("weight_produced" %in% names(dictionary)) {
+    presentation_col <- dictionary$new[dictionary$weight_produced == 1 & !is.na(dictionary$weight_produced)]
+    weight_col       <- dictionary$new[dictionary$weight_produced == 2 & !is.na(dictionary$weight_produced)]
+    unit_col         <- dictionary$new[dictionary$weight_produced == 3 & !is.na(dictionary$weight_produced)]
+    if (presentation_col %in% names(df) && weight_col %in% names(df) && unit_col %in% names(df)) {
+      new_col_name <- create_standardized_col_name(weight_col, "InKgGreen")
+      df[[new_col_name]] <- convert_to_green_kgs(df[[presentation_col]], df[[weight_col]], df[[unit_col]])
+    }
+  }
+  
+  return(df)
+}
+
 # Function to standardize prices to green KG
 standardize_prices <- function(df, dictionary) {
   

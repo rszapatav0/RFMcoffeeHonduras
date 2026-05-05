@@ -2,13 +2,11 @@
 #' Processing the RFM 2023 baseline survey data
 #' Author:       Federico Ceballos
 #' Creation:     August, 2024
-#' Last edition: April, 2026
-#' This code: Processes the Baseline database. 
-#'            It joins the variables inside loops by operating them (average, 
-#'            mode, ifany...) and charge some corrections for the data.
-#'            
-#' Input:  
-#' Output: 
+#' Last edition: May, 2026
+#' Editor:       Raquel Sofía
+#' 
+#' This code:    Processes the Baseline database from baselineRaw.xlsx to 
+#'               baselineAgg.csv
 #' ------------------------------------------------------------------------
 
 
@@ -23,7 +21,7 @@ source("02_code/baseline/baselineProcessingFunctions.R")
 
 # Defining file paths
 data_path       <- "01_data/raw/baseline/baselineRaw.xlsx"
-#changes_path    <- "01_data/processed/baseline/corrections.xlsx"
+changes_path    <- "01_data/processed/baseline/baselineCorrections.xlsx"
 dictionary_path <- "02_code/dictionary.xlsx"
 output_path     <- "02_code/dictionary.csv"
 
@@ -63,7 +61,7 @@ for (tab in names(tabs)) {
 base_df <- read_excel(data_path, sheet = "mod_combined")
 
 # Making corrections
-#source("02_code/baseline/corrections.R")
+source("02_code/baseline/baselineCorrections.R")
 
 
 ## Step 2: Do aggregate_data function for each Tab and join ---------------
@@ -106,8 +104,8 @@ df <- convert_numeric_columns(df,dictionary)
 df <- convert_to_dummies_multiple(df, dictionary)
 ##Rename geodata
 df <- df %>% rename(
-  Latitud = X_LATITUDE,
-  Longitud = X_LONGITUDE
+  Latitud = '_LATITUDE',
+  Longitud = '_LONGITUDE'
 )
 
 #Turning dummies into 1 and 0
@@ -120,6 +118,30 @@ df <- df %>% mutate(
 df <- standardize_areas(df, dictionary)
 df <- standardize_weights_prod(df, dictionary)
 colnames(df)
+
+
+## Step 4: Organizing variables for the merge with enline ------------------
+
+# Amount sold vs produced
+## Few observations on amount Sold -> replace 0s and NAs for amount Produced
+df <- df %>%
+  mutate(
+    amountSoldInKgGreen_typ_buy = if_else(
+      is.na(amountSoldInKgGreen_typ_buy) | amountSoldInKgGreen_typ_buy == 0,
+      amountOfCoffeeProducedLastHarvestInKgGreen,
+      amountSoldInKgGreen_typ_buy
+    )
+  )
+## Sold > Produced -> Replace Produced by sold
+table(df$amountOfCoffeeProducedLastHarvestInKgGreen < df$amountSoldInKgGreen_typ_buy)
+df <- df %>%
+  mutate(
+    amountOfCoffeeProducedLastHarvestInKgGreen = if_else(
+      amountOfCoffeeProducedLastHarvestInKgGreen < amountSoldInKgGreen_typ_buy,
+      amountSoldInKgGreen_typ_buy,
+      amountOfCoffeeProducedLastHarvestInKgGreen
+    )
+  )
 
 # Creating new variables
 df$yieldKgPerHa       <- ifelse(df$coffeeAreaLastHarvestInHa == 0,
@@ -135,6 +157,9 @@ write.csv(df, "01_data/processed/baseline/baselineAgg.csv", row.names = FALSE)
 
 # Assessing data quality --------------------------------------------------
 rm(list=ls())
-df <- read.csv("01_data/processed/baseline/baselineAgg.csv")
+df      <- read.csv("01_data/processed/baseline/baselineAgg.csv")
 source("02_code/baseline/baselinequalityCheckFunctions.R")
 results <- checkDataQuality(df)
+
+saveRDS(results, file="03_tables/baseline/baselineQualityCheck.RData")
+#results <- readRDS("03_tables/baseline/baselineQualityCheck.RData")
