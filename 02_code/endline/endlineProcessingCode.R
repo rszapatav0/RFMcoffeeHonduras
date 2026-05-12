@@ -177,4 +177,4 @@ source("02_code/endline/endlineQualityCheckFunctions.R")
 results <- checkDataQuality(df)
 
 saveRDS(results, file="03_tables/endline/endlineQualityCheck.RData")
-#results <- readRDS("03_tables/baseline/baselineQualityCheck.RData")
+results <- readRDS("03_tables/baseline/baselineQualityCheck.RData")

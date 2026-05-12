@@ -125,7 +125,8 @@ standardize_weights <- function(df, dictionary) {
       "qq"    = 100 * 0.453592,   #Quintales (100 libras)
       "lata"  = 33 * 0.453592,    #Latas
       "carga" = 200 * 0.453592,   #Cargas
-      "lb"    = 0.453592          #Libras
+      "lb"    = 0.453592,         #Libras
+      "other" = 1
     )
     
     presentation_factors <- c(
@@ -198,7 +199,9 @@ standardize_weights_prod <- function(df, dictionary) {
       "qq"    = 100 * 0.453592,   #Quintales (100 libras)
       "lata"  = 33 * 0.453592,    #Latas
       "carga" = 200 * 0.453592,   #Cargas
-      "lb"    = 0.453592          #Libras
+      "lb"    = 0.453592,         #Libras
+      "other" = 1,
+      "kg"    = 1
     )
     
     presentation_factors <- c(
@@ -258,7 +261,8 @@ standardize_prices <- function(df, dictionary) {
       "lata"  = 33 * 0.453592,    #Latas
       "carga" = 200 * 0.453592,   #Cargas
       "lb"    = 0.453592,         #Libras
-      "other" = 1
+      "other" = 1,
+      "kg"    = 1
     )
     
     presentation_factors <- c(
@@ -325,12 +329,12 @@ standardize_areas <- function(df, dictionary) {
   # Function to convert any area to area in hectares for vector inputs
   convert_to_hectares <- function(area, unit) {
     conversion_factors <- c(
-      "mz" = 7000 / 10000,
-      "tarea" = 437.5 / 10000,
+      "mz"      = 7000 / 10000,
+      "tarea"   = 437.5 / 10000,
       "hectare" = 1,
       "metros2" = 0.0001,
-      "vr" = 0.00006987,
-      "other" = 0
+      "vr"      = 0.00006987,
+      "other"   = 1
     )
     
     #if (!unit %in% names(conversion_factors)) {
@@ -400,14 +404,15 @@ standardize_distances <- function(df, dictionary) {
   # Function to convert any distance to meters for vector inputs
   convert_to_meters <- function(distance, unit) {
     conversion_factors <- c(
-      "brazadas" = 1.67,   # 1 Brazada ≈ 1.67 meters
-      "in" = 0.0254,       # 1 inch (pulgada) = 0.0254 meters
-      "pie" = 0.3048,      # 1 foot (pie) = 0.3048 meters
-      "vr" = 0.836127,     # 1 vara = 0.836127 meters
-      "cm" = 0.01,         # 1 centimeter (centimetro) = 0.01 meters
-      "cuartas" = 0.208,   # 1 cuarta ≈ 0.208 meters
-      "yd" = 0.9144,       # 1 yard (yarda) = 0.9144 meters
-      "mt" = 1             # 1 meter = 1 meter
+      "brazadas" = 1.67,     # 1 Brazada ≈ 1.67 meters
+      "in"       = 0.0254,   # 1 inch (pulgada) = 0.0254 meters
+      "pie"      = 0.3048,   # 1 foot (pie) = 0.3048 meters
+      "vr"       = 0.836127, # 1 vara = 0.836127 meters
+      "cm"       = 0.01,     # 1 centimeter (centimetro) = 0.01 meters
+      "cuartas"  = 0.208,    # 1 cuarta ≈ 0.208 meters
+      "yd"       = 0.9144,   # 1 yard (yarda) = 0.9144 meters
+      "mt"       = 1,        # 1 meter = 1 meter,
+      "other"    = 1
     )
     
     distance_in_meters <- ifelse(

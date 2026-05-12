@@ -1,3 +1,14 @@
+# ADD COMPARING ORDER VARIABLES
+# ADD COMPARING ORDER VARIABLES
+# ADD COMPARING ORDER VARIABLES
+# ADD COMPARING ORDER VARIABLES
+# ADD COMPARING ORDER VARIABLES
+# ADD COMPARING ORDER VARIABLES
+# ADD COMPARING ORDER VARIABLES
+# ADD COMPARING ORDER VARIABLES
+# ADD COMPARING ORDER VARIABLES
+
+
 # Data quality###
 # Function to find columns with suffixed
 find_columns_with_suffixes <- function(df) {
@@ -61,8 +72,8 @@ check_points_in_polygon <- function(df) {
   # Create an sf object from the latitude and longitude columns
   #points_sf <- st_as_sf(df, coords = c("Longitud", "Latitud"), crs = crs_polygon)
   points_sf <- df %>%
-       filter(!is.na(Longitud) & !is.na(Latitud)) %>%
-       st_as_sf(coords = c("Longitud", "Latitud"), crs = crs_polygon)
+    dplyr::filter(!is.na(.data$Longitud) & !is.na(.data$Latitud)) %>%
+    st_as_sf(coords = c("Longitud", "Latitud"), crs = crs_polygon)
   
   # Check if each point falls within the polygon
   points_within_matrix <- st_within(points_sf, polygon_sf, sparse = FALSE)
@@ -301,7 +312,6 @@ checkDataQuality <- function(data) {
   
   # 2. Check for Outliers in Key Variables
   key_variables = find_columns_with_suffixes(data)
-  print(key_variables)
   results$outliers    <- lapply(key_variables, function(v) {
     if (v %in% names(data)) {
       # Calculate the Interquartile Range (IQR)
@@ -316,8 +326,8 @@ checkDataQuality <- function(data) {
       upper_bound <- Q3 + 3* IQR_value
       
       # Identify and return outliers
-      #return(data[[v]][data[[v]] < lower_bound | data[[v]] > upper_bound])
-      outliers <- data[[v]][data[[v]] < lower_bound | data[[v]] > upper_bound]
+      #outliers <- data[[v]][data[[v]] < lower_bound | data[[v]] > upper_bound]
+      outliers <- which(data[[v]] < lower_bound | data[[v]] > upper_bound)
       
       return(outliers[!is.na(outliers)])
     }
@@ -344,9 +354,21 @@ checkDataQuality <- function(data) {
             return(upper_bound)
        }
   })
-  names(results$outliers) <- key_variables
+  names(results$outliers)    <- key_variables
   names(results$lower_bound) <- key_variables
   names(results$upper_bound) <- key_variables
+  
+  # 2.1. Check for Missings in Key Variables
+  results$missings <- lapply(key_variables, function(v) {
+    if (v %in% names(data)) {
+
+      # Identify and return missings
+      missings <- data[[v]][is.na(data[[v]])]
+      
+      return(missings)
+    }
+  })
+  names(results$missings)    <- key_variables
   
   # 3. Check if a relevant question was answered
   {condition_question_pairs <- list(
