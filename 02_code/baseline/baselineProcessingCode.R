@@ -65,22 +65,12 @@ source("02_code/baseline/baselineCorrections.R")
 
 
 ## Step 2: Do aggregate_data function for each Tab and join ---------------
-# Assessing loop inside the loop
-## Aggregate the sales_process_repeat data
-agg_sales_process_repeat <- aggregate_data(sales_process_repeat_df, sales_process_repeat_dict, "ID_ENCUESTA", "_typ")
-## Merge aggregated sales_process_repeat data into sales_repeat data
-sales_repeat_df <- left_join(sales_repeat_df, agg_sales_process_repeat, by = "ID_ENCUESTA")
-
 # Creating an object that contains all loops processed
 aggregated_data <- map2(tabs, names(tabs), function(suffix, tab) {
-  if (tab == "sales_process_repeat") {
-    return(agg_sales_process_repeat)  # Return the already aggregated sales data
-  } else {
     df       <- get(paste0(tab, "_df"))
     tab_dict <- get(paste0(tab, "_dict"))
     aggregated_df <- aggregate_data(df, tab_dict, "ID_ENCUESTA", suffix)
     return(aggregated_df)
-  }
 })
 
 # Merge all aggregated data frames by _submission__uuid
@@ -121,27 +111,6 @@ colnames(df)
 
 
 ## Step 4: Organizing variables for the merge with enline ------------------
-
-# Amount sold vs produced
-## Few observations on amount Sold -> replace 0s and NAs for amount Produced
-df <- df %>%
-  mutate(
-    amountSoldInKgGreen_typ_buy = if_else(
-      is.na(amountSoldInKgGreen_typ_buy) | amountSoldInKgGreen_typ_buy == 0,
-      amountOfCoffeeProducedLastHarvestInKgGreen,
-      amountSoldInKgGreen_typ_buy
-    )
-  )
-## Sold > Produced -> Replace Produced by sold
-table(df$amountOfCoffeeProducedLastHarvestInKgGreen < df$amountSoldInKgGreen_typ_buy)
-df <- df %>%
-  mutate(
-    amountOfCoffeeProducedLastHarvestInKgGreen = if_else(
-      amountOfCoffeeProducedLastHarvestInKgGreen < amountSoldInKgGreen_typ_buy,
-      amountSoldInKgGreen_typ_buy,
-      amountOfCoffeeProducedLastHarvestInKgGreen
-    )
-  )
 
 # Creating new variables
 df$yieldKgPerHa       <- ifelse(df$coffeeAreaLastHarvestInHa == 0,

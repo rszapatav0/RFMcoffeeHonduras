@@ -13,7 +13,7 @@
 # Function to find columns with suffixed
 find_columns_with_suffixes <- function(df) {
   # Define the suffixes to look for
-  suffixes <- c("InHa", "InHa_trr", "PerHa", "InKgGreen", "InKgGreen_typ_buy")
+  suffixes <- c("InHa", "InHa_trr", "PerHa", "InKgGreen", "InKgGreen_typ")
   
     # Create a regular expression pattern to match these suffixes
   pattern <- paste0(suffixes, "$", collapse = "|")
@@ -326,8 +326,7 @@ checkDataQuality <- function(data) {
       upper_bound <- Q3 + 3* IQR_value
       
       # Identify and return outliers
-      #outliers <- data[[v]][data[[v]] < lower_bound | data[[v]] > upper_bound]
-      outliers <- which(data[[v]] < lower_bound | data[[v]] > upper_bound)
+      outliers <- data[[v]][data[[v]] < lower_bound | data[[v]] > upper_bound]
       
       return(outliers[!is.na(outliers)])
     }
@@ -493,7 +492,7 @@ checkDataQuality <- function(data) {
   print(false_indices)
   
   # 9. Check if coffee produced and coffee sold are in the ballpark of each other
-  results$ballpark <- extract_outside_ballpark(df,"amountOfCoffeeProducedLastHarvestInKgGreen","amountSoldInKgGreen_typ_buy", percent=25)
+  results$ballpark <- extract_outside_ballpark(df,"amountOfCoffeeProducedLastHarvestInKgGreen","amountSoldInKgGreen_typ", percent=25)
 
   return(results)
 }
