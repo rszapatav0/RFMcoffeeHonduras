@@ -80,7 +80,6 @@ df            <- df %>% rename(surveyID = ID_ENCUESTA)
 
 
 ## Step 3: Organize aggregated data ----------------------------------------
-
 #Other changes
 ##There are some problems with accessedCreditOrLoan for turning numerical
 df$accessedCreditOrLoan <- ifelse(
@@ -110,8 +109,7 @@ df <- standardize_weights_prod(df, dictionary)
 colnames(df)
 
 
-## Step 4: Organizing variables for the merge with enline ------------------
-
+## Step 4: Organizing variables for the merge with endline ------------------
 # Creating new variables
 df$yieldKgPerHa       <- ifelse(df$coffeeAreaLastHarvestInHa == 0,
                                 NA, df$amountOfCoffeeProducedLastHarvestInKgGreen / df$coffeeAreaLastHarvestInHa)
@@ -122,10 +120,10 @@ df$densityPlantsPerHa <- ifelse(df$coffeeAreaLastHarvestInHa == 0,
 
 # Save 
 write.csv(df, "01_data/processed/baseline/baselineAgg.csv", row.names = FALSE)
-
+df2 <- df
 
 # Assessing data quality --------------------------------------------------
-rm(list=ls())
+#rm(list=ls())
 df      <- read.csv("01_data/processed/baseline/baselineAgg.csv")
 source("02_code/baseline/baselinequalityCheckFunctions.R")
 results <- checkDataQuality(df)

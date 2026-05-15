@@ -126,6 +126,7 @@ standardize_weights <- function(df, dictionary) {
       "lata"  = 33 * 0.453592,    #Latas
       "carga" = 200 * 0.453592,   #Cargas
       "lb"    = 0.453592,         #Libras
+      "galon" = 3*33 * 0.453592,  #Suponiendo que 1galon=3latas
       "other" = 1
     )
     
@@ -200,6 +201,7 @@ standardize_weights_prod <- function(df, dictionary) {
       "lata"  = 33 * 0.453592,    #Latas
       "carga" = 200 * 0.453592,   #Cargas
       "lb"    = 0.453592,         #Libras
+      "galon" = 3*33 * 0.453592,  #Suponiendo que 1galon=3latas
       "other" = 1,
       "kg"    = 1
     )
@@ -261,6 +263,7 @@ standardize_prices <- function(df, dictionary) {
       "lata"  = 33 * 0.453592,    #Latas
       "carga" = 200 * 0.453592,   #Cargas
       "lb"    = 0.453592,         #Libras
+      "galon" = 3*33 * 0.453592,  #Suponiendo que 1galon=3latas
       "other" = 1,
       "kg"    = 1
     )
@@ -276,12 +279,12 @@ standardize_prices <- function(df, dictionary) {
     #All weights to kilograms
     #price_in_kgs <- price / conversion_factors[unit]
     price_in_kgs <- ifelse(
-      #price == 777, NA,
-      #ifelse(
+      price == 777, NA,
+      ifelse(
         unit %in% names(conversion_factors),
         price / conversion_factors[unit],
         price)
-    #)
+    )
     #All presentations to green
     green_coffee_price <- ifelse(
         presentation %in% names(presentation_factors),
@@ -464,7 +467,7 @@ standardize_distances <- function(df, dictionary) {
 # Function to apply the desired aggregation
 aggregate_data <- function(df, dict, farm_id_col, tab_suffix) {
   
-  df <- convert_numeric_columns(df,dictionary)  # Assuming this function is defined to convert appropriate columns to numeric
+  df <- convert_numeric_columns(df,dictionary)
   df <- convert_to_dummies(df, dictionary)
   df <- convert_to_dummies_multiple(df, dictionary)
   
