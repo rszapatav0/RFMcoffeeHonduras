@@ -1,45 +1,19 @@
-#' This script corrects multiple variables in "01_data/raw/baseline/baselineAgg.csv", 
-#' including missing values, outliers, and violations of expected numeric order relationships.
+#' This script cleans multiple variables in "01_data/raw/baseline/baselineRaw.csv", 
+#' using the "baselineCorrections.xlsx" Excel.
 #' 
-#' The main input for these corrections is: "03_tables/baseline/baselineQualityCheck.RData"
-#' 
-#' Workflow:
-#' 1. Critical variables are identified using baselineQualityCheck.RData and 
-#' baselineAgg.csv
-#' 2. Missing values, outliers, and order violations are detected
-#' 3. Corrections are manually implemented in "baselineCorrections.xlsx"
-#' 4. Detection code (steps 1–3) is commented out
-#' 5. baselineCorrections.xlsx is read and loaded into the corresponding datasets 
-#' for each aggregation level
-#' Only step 5 remains active during regular execution.
-#' 
-#' This structure allows the main script ("baselineProcessingCode.R") to load imputations
-#' immediately after reading the raw data and before any further processing, ensuring 
-#' that corrections are applied from the beginning of the pipeline.
-#' 
-#' Notes:
-#' 1. The commented detection code requires an existing baselineAgg.csv file, since the
-#' quality checks are run after this dataset has been created. If a new review of
-#' variables is needed, baselineAgg.csv must first be rebuilt.
-#' Also note that the quality check used for detection will differ from the one 
-#' obtained after corrections are loaded.
-#' 
-#' 2. An exception to the Excel-based correction workflow is the sales_process_repeat 
+#' Note:
+#' An exception to the Excel-based correction workflow is the sales_process_repeat 
 #' loop (coffee sold to each buyer by sales format). Due to issues during baseline 
 #' survey programming, the variables related to coffee quantity sold and sales units
 #' are missing for most observations in this loop.
-#' This issue is addressed directly in this script using other available variables 
+#' The issue is addressed directly in this script using other available variables 
 #' (e.g. quantity sold to each buyer). As a result, the sales_process_repeat_df dataset
 #' is rebuilt here and the corrected version is the one used in "baselineProcessingCode.R".
-#' Corrections for this loop are therefore not implemented through "baselineCorrections.xlsx".
 
 
 #' ========================================================================
-#  Reading baselineCorrections.xlsx ---------------------------------------
+#  Main sheet -------------------------------------------------------------
 #' ========================================================================
-
-#' ------------------------------------------------------------------------
-## Main sheet -------------------------------------------------------------
 
 # Reading Excel
 base_chg <- read_excel(changes_path, sheet = "mod_combined")
@@ -75,8 +49,9 @@ for (var in vars_corregidas) {
 
 
 
-#' ------------------------------------------------------------------------
-## area_terr sheet --------------------------------------------------------
+#' ========================================================================
+#  area_terr sheet --------------------------------------------------------
+#' ========================================================================
 
 # Reading Excel
 area_terr_chg <- read_excel(changes_path, sheet = "area_terr")
@@ -117,10 +92,12 @@ for (var in vars_corregidas) {
 
 
 
-#' ------------------------------------------------------------------------
-## sales_process and sales_process_repeat sheets' -------------------------
+#' ========================================================================
+#  sales_process and sales_process_repeat sheets' -------------------------
+#' ========================================================================
 
-### Excel corrections to sales_process_repeat -----------------------------
+#' ------------------------------------------------------------------------
+## Excel corrections to sales_process_repeat -----------
 
 # Reading Excel
 sales_process_repeat_chg <- read_excel(changes_path, sheet = "sales_process_repeat")
@@ -159,7 +136,8 @@ rm("base_chg","area_terr_chg","sales_process_repeat_chg",
    "map_var","vars_corregidas","var","var_cor")
 
 
-### Creating dataset with production and sales ----------------------------
+#' ------------------------------------------------------------------------
+## Creating dataset with production and sales -----------
 
 # Vars on main sheet
 base_quan <- base_df %>%
@@ -184,7 +162,8 @@ df_quan     <- full_join(base_quan, df_quan_aux,  by = "ID_ENCUESTA")
 rm(base_quan,sales_repeat_quan,sales_process_repeat_quan,df_quan_aux)
 
 
-### Assessing outliers and missing values ---------------------------------
+#' ------------------------------------------------------------------------
+## Assessing outliers and missing values ---------------
 #' General rule: when in doubt, take the production's word for it.
 
 # Creating auxiliar variables
@@ -431,7 +410,8 @@ df_quan$amountSold[df_quan$ID_ENCUESTA=="2023-10-06-T-797-X-251"] <-
   (209.28/421.8)*(df_quan$amountSold[df_quan$ID_ENCUESTA=="2023-10-06-T-797-X-251"])
 
 
-### Keeping datasets for sales --------------------------------------------
+#' ------------------------------------------------------------------------
+## Keeping datasets for sales ---------------------
 
 # Assigning values to sales_process_repeat_df
 df_quan_spr <- df_quan %>%

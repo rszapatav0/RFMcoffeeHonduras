@@ -208,12 +208,12 @@ standardize_weights_prod <- function(df, dictionary) {
     #All weights to kilograms
     #weight_in_kgs <- weight * conversion_factors[unit]
     weight_in_kgs <- ifelse(
-      #weight == 777, NA,
-      #ifelse(
+      weight == 777, NA,
+      ifelse(
       unit %in% names(conversion_factors),
       weight * conversion_factors[unit],
       weight)
-    #)
+    )
     #All presentations to green
     green_coffee_weight <- ifelse(
       presentation %in% names(presentation_factors),

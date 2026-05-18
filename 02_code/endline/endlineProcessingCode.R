@@ -8,9 +8,9 @@
 #' This code: Processes the Endline database. 
 #'            
 #' Input:  - File "endlineRaw.xlsx", which is a copy from 
-#'         "Encuesta_de_Línea_Intermedia_Piloto_Transformando_Mercados_de_Café_-_all_versions_-_Español_es_-_2024-09-17-17-43-42"
+#'         "Encuesta_de_Línea_Intermedia_Piloto_Transformando_Mercados_de_Café_-_all_versions_-_Español_es_-_2024-09-17-17-43-42.xlsx"
 #'         - File "dictionary.xlsx" updated for endline variables
-#'         - File "corrections.xlsx" with the changes to include in the data
+#'         - File "endlineCorrections.xlsx" with the changes to include in the data
 #' Output: - File "endlineAgg.csv" with all endline variables.
 #' ------------------------------------------------------------------------
 
@@ -71,23 +71,12 @@ source("02_code/endline/endlineCorrections.R")
 
 
 ## Step 2: Do aggregate_data function for each Tab and join ---------------
-
-# Assessing loop inside the loop
-## Aggregate the sales_process_repeat data
-agg_sales_process_repeat <- aggregate_data(sales_process_repeat_df, sales_process_repeat_dict, "_submission__uuid", "_typ")
-## Merge aggregated sales_process_repeat data into sales_repeat data
-sales_repeat_df <- left_join(sales_repeat_df, agg_sales_process_repeat, by = "_submission__uuid")
-
 # Creating an object that contains all loops processed
 aggregated_data <- map2(tabs, names(tabs), function(suffix, tab) {
-  if (tab == "sales_process_repeat") {
-    return(agg_sales_process_repeat)  # Return the already aggregated sales data
-  } else {
-    df       <- get(paste0(tab, "_df"))
-    tab_dict <- get(paste0(tab, "_dict"))
-    aggregated_df <- aggregate_data(df, tab_dict, "_submission__uuid", suffix)
-    return(aggregated_df)
-  }
+  df       <- get(paste0(tab, "_df"))
+  tab_dict <- get(paste0(tab, "_dict"))
+  aggregated_df <- aggregate_data(df, tab_dict, "_submission__uuid", suffix)
+  return(aggregated_df)
 })
 
 # Merge all aggregated data frames by _submission__uuid
@@ -96,7 +85,6 @@ df            <- left_join(base_df, aggregated_df,  by = c("_uuid"="_submission_
 
 
 ## Step 3: Organize aggregated data ----------------------------------------
-
 #Adjusting numeric columns and creating dummies for multiple selection variables
 df <- convert_numeric_columns(df)
 df <- df %>% 
@@ -104,7 +92,6 @@ df <- df %>%
     E2XC = as.numeric(E2XC),
     E3XC = as.numeric(E3XC),
     E4C  = as.numeric(E4C))
-#df <- convert_to_dummies_multiple(df, dictionary)
 
 #Turning dummies into 1 and 0
 binary_vars          <- dictionary %>% filter(is.na(el_loop)) %>% filter(!is.na(Binaria) & Binaria == 1) %>% pull(new)
@@ -151,15 +138,6 @@ df <- df %>% rename(
 
 
 ## Step 4: Organizing variables for the merge with baseline -----------------
-
-# Amount sold vs produced
-## Sold > Produced -> Replace Produced by sold
-table(df$amountOfCoffeeProducedLastHarvestInKgGreen < df$amountSoldInKgGreen_typ_buy)
-# df_filtered <- df %>%
-#   filter(amountOfCoffeeProducedLastHarvestInKgGreen < amountSoldInKgGreen_typ_buy) %>%
-#   select(c(amountOfCoffeeProducedLastHarvestInKgGreen, amountSoldInKgGreen_typ_buy, typeOfCoffeeProduced,
-#            coffeeProductionMeasurementUnit, amountOfCoffeeProducedLastHarvest))
-
 # Creating new variables
 df$yieldKgPerHa       <- ifelse(df$coffeeAreaLastHarvestInHa_trr == 0,
   NA, df$amountOfCoffeeProducedLastHarvestInKgGreen / df$coffeeAreaLastHarvestInHa_trr)
@@ -168,13 +146,14 @@ df$densityPlantsPerHa <- ifelse(df$coffeeAreaLastHarvestInHa_trr == 0,
 
 # Save
 write.csv(df, "01_data/processed/endline/endlineAgg.csv", row.names = FALSE)
+df2 <- df
 
 
 # Assessing data quality --------------------------------------------------
-rm(list=ls())
+#rm(list=ls())
 df <- read.csv("01_data/processed/endline/endlineAgg.csv")
 source("02_code/endline/endlineQualityCheckFunctions.R")
 results <- checkDataQuality(df)
 
 saveRDS(results, file="03_tables/endline/endlineQualityCheck.RData")
-results <- readRDS("03_tables/baseline/baselineQualityCheck.RData")
+#results <- readRDS("03_tables/baseline/baselineQualityCheck.RData")

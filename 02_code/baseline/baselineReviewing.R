@@ -1,18 +1,24 @@
-#' Run the begining of baselineProcessingCode before running this script.
+#' -----------------------------------------------------------------------------
+#' IMPORTANT!
+#' Run the beginning of baselineProcessingCode.R before running this script.
+#' End on line 61: base_df <- read_excel(data_path, sheet = "mod_combined")
+#' -----------------------------------------------------------------------------
+#' 
+#' This script reviews variables in "01_data/raw/baseline/baselineAgg.csv", including 
+#' missing values, outliers, and violations of expected numeric order relationships.
+#' The main input for these corrections is: "03_tables/baseline/baselineQualityCheck.RData"
 
-#' ========================================================================
-#  Checking variables -----------------------------------------------------
-#' ========================================================================
 
-# Main tab
+# Loading data
 df             <- read.csv("01_data/processed/baseline/baselineAgg.csv")
 df$ID_ENCUESTA <- df$surveyID
 results        <- readRDS("03_tables/baseline/baselineQualityCheck.RData")
 
 
 
-#' ------------------------------------------------------------------------
-## Assessing area variables -----------------------------------------------
+#' ========================================================================
+#  Assessing area variables -----------------------------------------------
+#' ========================================================================
 
 # Vars on main sheet
 base_area <- df %>%
@@ -39,7 +45,9 @@ df_area$totalParcelArea <- as.numeric(df_area$totalParcelArea)
 rm(area_terr_area)
 
 
-### Missing values ------------------
+#' ------------------------------------------------------------------------
+## Missing values ------------------
+
 df_area_missing <- df_area %>%
   dplyr::filter(if_any(all_of(names(df_area)), is.na))
 colSums(is.na(df_area_missing))
@@ -50,7 +58,8 @@ colSums(is.na(base_area))
 rm(df_area_missing,base_area)
 
 
-### Outliers ------------------------
+#' ------------------------------------------------------------------------
+## Outliers ------------------------
 # Separating observations with outliers (based on quality check)
 vars_check <- c("totalParcelAreaInHa_trr","totalAreaUsedForAgricultureInHa","coffeeAreaLastHarvestInHa")
 ## Loop by outlier variable
@@ -170,7 +179,9 @@ rm(vars_check,flag,df_area_outliers,df_area_outliers_c1,df_area_outliers_c2,
    df_area_outliers_c7,corrected_outliers,coherent_outliers)
 
 
-### Comparing areas ------------------------
+#' ------------------------------------------------------------------------
+## Comparing areas ------------------------
+
 # Case 1: coffeeAreaLastHarvestInHa > totalAreaUsedForAgricultureInHa
 df_area_comparing_c1 <- df_area %>% filter(
   coffeeAreaLastHarvestInHa > totalAreaUsedForAgricultureInHa)
@@ -214,10 +225,13 @@ rm(df_area_comparing_c1,df_area_comparing_c2,df_area_comparing_c3,area_terr_df,
    area_terr_dict,df_area,cortd_comparing)
 
 
-#' ------------------------------------------------------------------------
-## Assessing quantity variables -------------------------------------------
 
-### Organizing data ------------------------
+#' ========================================================================
+#  Assessing quantity variables -------------------------------------------
+#' ========================================================================
+
+#' ------------------------------------------------------------------------
+## Organizing data ------------------------
 
 # Standardizing quantity to green kg
 df_quan_comparing <- standardize_weights(df_quan_missing,sales_process_repeat_dict)
@@ -233,7 +247,9 @@ df_quan_comp_agg <- standardize_weights_prod(df_quan_comparing,dictionary)
 names(df_quan_comp_agg)
 
 
-### Comparing quantities ------------------------
+#' ------------------------------------------------------------------------
+## Comparing quantities ------------------------
+
 # Checking condition fulfillment
 df_quan_comp_flag <- df_quan_comp_agg %>% filter(
   amountOfCoffeeProducedLastHarvestInKgGreen < amountSoldInKgGreen)
@@ -248,7 +264,9 @@ df_quan_comp_flag <- df_quan_comp_flag[!(df_quan_comp_flag$ID_ENCUESTA %in% c(co
 rm(df_quan_comp_flag,false_comparing,cortd_comparing,df_quan_comparing)
 
 
-### Outliers ------------------------
+#' ------------------------------------------------------------------------
+## Outliers ------------------------
+
 # Separating observations with outliers (based on quality check)
 df_quan_out <- df %>% #base_df
   select(c(surveyID,amountOfCoffeeProducedLastHarvestInKgGreen,amountSoldInKgGreen_typ))
@@ -300,10 +318,12 @@ rm(vars_check,flag,df_area_outliers,df_area_outliers_c1,df_area_outliers_c2,
 
 
 
-#' ------------------------------------------------------------------------
-## Assessing number of plants variables -----------------------------------
+#' ========================================================================
+#  Assessing number of plants variables -----------------------------------
+#' ========================================================================
 
-### Outliers ------------------------
+#' ------------------------------------------------------------------------
+## Outliers ------------------------
 #' The number of plants per hectare was checked to ensure it fell between
 #' 2,334 (2 m × 1.5 m) and 7,000 (1 m × 1 m), and adjustments were made in the
 #' Excel. Virtually, all outliers correspond to large coffee-growing areas.
@@ -340,10 +360,13 @@ rm(df_plant,vars_check,v,IQR_value,Q1,Q3,lower_bound,upper_bound,flag,df_plant_o
 
 
 
-#' ------------------------------------------------------------------------
-## Assessing density of plants --------------------------------------------
+#' ========================================================================
+#  Assessing density of plants --------------------------------------------
+#' ========================================================================
 
-### Outliers ------------------------
+#' ------------------------------------------------------------------------
+## Outliers ------------------------
+
 #Separating observations with outliers (based on quality check)
 df_dens_out <- df %>% select(c(
     surveyID,densityPlantsPerHa,coffeeAreaLastHarvest,coffeeAreaMeasurementUnit,
@@ -401,10 +424,13 @@ df_dens_outliers <- df_dens_outliers[!(df_dens_outliers$surveyID %in% c(correcte
 rm(df_dens_out,df_dens_outliers,corrected_outliers,coherent_outliers,flag,v,vars_check)
 
 
-#' ------------------------------------------------------------------------
-## Assessing yield per ha -------------------------------------------------
+#' ========================================================================
+#  Assessing yield per ha -------------------------------------------------
+#' ========================================================================
 
-### Outliers ------------------------
+#' ------------------------------------------------------------------------
+## Outliers ------------------------
+
 #Separating observations with outliers (based on quality check)
 df_yield_out <- df %>% select(c(
   surveyID,yieldKgPerHa,coffeeAreaLastHarvest,coffeeAreaMeasurementUnit,
@@ -440,10 +466,13 @@ df_yield_outliers <- df_yield_outliers[!(df_yield_outliers$surveyID %in% c(corre
 rm(df_yield_out,df_yield_outliers,corrected_outliers,coherent_outliers,flag,v,vars_check)
 
 
-#' ------------------------------------------------------------------------
-## Assessing min and max price --------------------------------------------
 
-### Comparing prices ------------------------
+#' ========================================================================
+#  Assessing min and max price --------------------------------------------
+#' ========================================================================
+
+#' ------------------------------------------------------------------------
+## Comparing prices ------------------------
 
 df_price_comp <- df %>% select(c(
   surveyID,minimumReceivedPriceForCoffeeInKgGreen_typ,maximumReceivedPriceForCoffeeInKgGreen_typ)) %>%
@@ -452,7 +481,9 @@ df_price_comp <- df %>% select(c(
 rm(df_price_comp)
 
 
-### Outliers ------------------------
+#' ------------------------------------------------------------------------
+## Outliers ------------------------
+
 #Separating observations with outliers (based on quality check)
 df_price_out <- df %>% select(c(
   surveyID,minimumReceivedPriceForCoffeeInKgGreen_typ,maximumReceivedPriceForCoffeeInKgGreen_typ,
