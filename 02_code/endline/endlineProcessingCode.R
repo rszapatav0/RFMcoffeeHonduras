@@ -85,6 +85,11 @@ df            <- left_join(base_df, aggregated_df,  by = c("_uuid"="_submission_
 
 
 ## Step 3: Organize aggregated data ----------------------------------------
+
+# Keeping surveys that agree to participate
+df <- df %>% filter(df$agreesToSurveyParticipation=="Y")
+df2 <- df
+
 #Adjusting numeric columns and creating dummies for multiple selection variables
 df <- convert_numeric_columns(df)
 df <- df %>% 
@@ -93,16 +98,19 @@ df <- df %>%
     E3XC = as.numeric(E3XC),
     E4C  = as.numeric(E4C))
 
+
 #Turning dummies into 1 and 0
 binary_vars          <- dictionary %>% filter(is.na(el_loop)) %>% filter(!is.na(Binaria) & Binaria == 1) %>% pull(new)
 existing_binary_vars <- intersect(binary_vars, names(df))
 df <- df %>% mutate(
  across(all_of(existing_binary_vars), ~ ifelse(. %in% c("Y", "y", "yes", 1), 1, 0)))
 
+
 # Standardize weights, distances and production
 df <- standardize_distances(df, dictionary)
 df <- standardize_weights_prod(df, dictionary)
 colnames(df)
+
 
 # Fixing version problems
 ## Version 2 to Version 3: loop by land.
@@ -130,6 +138,14 @@ df <- df %>%
   select(-c(`landLegalStatusForCultivation/own_land_trr`, `landLegalStatusForCultivation/rent_in_land_trr`,
             `landLegalStatusForCultivation/rent_out_land_trr`, `landLegalStatusForCultivation/communal_land_trr`))
 
+
+# Creating new variables
+df$yieldKgPerHa       <- ifelse(df$coffeeAreaLastHarvestInHa_trr == 0,
+                                NA, df$amountOfCoffeeProducedLastHarvestInKgGreen / df$coffeeAreaLastHarvestInHa_trr)
+df$densityPlantsPerHa <- ifelse(df$coffeeAreaLastHarvestInHa_trr == 0,
+                                NA, df$totalCoffeePlantsOnFarm / df$coffeeAreaLastHarvestInHa_trr)
+
+
 # Rename geodata
 df <- df %>% rename(
   Latitud = '_GPS_latitude',
@@ -137,16 +153,9 @@ df <- df %>% rename(
 )
 
 
-## Step 4: Organizing variables for the merge with baseline -----------------
-# Creating new variables
-df$yieldKgPerHa       <- ifelse(df$coffeeAreaLastHarvestInHa_trr == 0,
-  NA, df$amountOfCoffeeProducedLastHarvestInKgGreen / df$coffeeAreaLastHarvestInHa_trr)
-df$densityPlantsPerHa <- ifelse(df$coffeeAreaLastHarvestInHa_trr == 0,
-  NA, df$totalCoffeePlantsOnFarm / df$coffeeAreaLastHarvestInHa_trr)
-
 # Save
 write.csv(df, "01_data/processed/endline/endlineAgg.csv", row.names = FALSE)
-df2 <- df
+#df2 <- df
 
 
 # Assessing data quality --------------------------------------------------

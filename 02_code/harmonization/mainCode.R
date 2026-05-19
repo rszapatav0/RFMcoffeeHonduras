@@ -16,8 +16,7 @@
 #' ------------------------------------------------------------------------
 
 # Loading Packages
-packageList <- c("dplyr", "readxl", "purrr", "tidyr", 
-                 "stringr", "tidyverse", "fuzzyjoin")
+packageList <- c("dplyr", "readxl", "purrr", "tidyr","stringr", "tidyverse", "fuzzyjoin")
 lapply(packageList,require,character.only=TRUE)
 rm(list=ls())
 

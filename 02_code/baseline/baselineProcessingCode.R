@@ -80,49 +80,68 @@ df            <- df %>% rename(surveyID = ID_ENCUESTA)
 
 
 ## Step 3: Organize aggregated data ----------------------------------------
-#Other changes
-##There are some problems with accessedCreditOrLoan for turning numerical
-df$accessedCreditOrLoan <- ifelse(
-  df$accessedCreditOrLoan == "Y", 1,
-  ifelse(df$accessedCreditOrLoan == "N", 0, NA)
-)
-##To create verified variable
-df <- df %>% select(-c(totalAreaUsedForAgricultureInHa))
-#Adjusting numeric columns and creating dummies for multiple selection variables
-df <- convert_numeric_columns(df,dictionary)
-df <- convert_to_dummies_multiple(df, dictionary)
-##Rename geodata
-df <- df %>% rename(
-  Latitud = '_LATITUDE',
-  Longitud = '_LONGITUDE'
-)
 
-#Turning dummies into 1 and 0
+# Keeping surveys that agree to participate
+df <- df %>% filter(df$agreesToSurveyParticipation=="Y")
+
+
+# Turning dummies into 1 and 0
 binary_vars          <- dictionary %>% filter(is.na(bl_loop)) %>% filter(!is.na(Binaria) & Binaria == 1) %>% pull(new)
 existing_binary_vars <- intersect(binary_vars, names(df))
 df <- df %>% mutate(
   across(all_of(existing_binary_vars), ~ ifelse(. %in% c("Y", "y", "yes", 1), 1, 0)))
 
+
+# Adjusting numeric columns and creating dummies for multiple selection variables
+df <- convert_numeric_columns(df,dictionary)
+df <- convert_to_dummies_multiple(df, dictionary)
+
+
 # Standardize areas, weights and distances
+## Deleting original variable
+df <- df %>% select(-c(totalAreaUsedForAgricultureInHa))
+## Standardizing
 df <- standardize_areas(df, dictionary)
 df <- standardize_weights_prod(df, dictionary)
 colnames(df)
 
 
-## Step 4: Organizing variables for the merge with endline ------------------
 # Creating new variables
 df$yieldKgPerHa       <- ifelse(df$coffeeAreaLastHarvestInHa == 0,
                                 NA, df$amountOfCoffeeProducedLastHarvestInKgGreen / df$coffeeAreaLastHarvestInHa)
 df$densityPlantsPerHa <- ifelse(df$coffeeAreaLastHarvestInHa == 0,
                                 NA, df$totalCoffeePlantsOnFarm / df$coffeeAreaLastHarvestInHa)
-#summary(df$yieldKgPerHa)
-#summary(df$densityPlantsPerHa)
+
+
+# Other changes
+## There are some problems with accessedCreditOrLoan for turning numerical
+df$accessedCreditOrLoan <- ifelse(
+  df$accessedCreditOrLoan == "Y", 1,
+  ifelse(df$accessedCreditOrLoan == "N", 0, NA)
+)
+## Rename geodata
+df <- df %>% rename(
+  Latitud = '_LATITUDE',
+  Longitud = '_LONGITUDE'
+)
+## Number of pests and diseases
+no_pest_condition <- str_detect(
+  str_to_lower(df$otherPestsOrDiseases),
+  "ningun|ninguna|ninguno|nada|no tuvo|no tiene|no les afecta|no le afect|no lo atac|no la atac|no hubo|no ha tenido|no reconoce|finca nueva|plantación nueva|primer corte")
+df$mainPestsOrDiseasesLastYear[no_pest_condition] <- "non"
+df$E35C <- as.numeric(replace(df$E35C, no_pest_condition, 0))
+
 
 # Save 
 write.csv(df, "01_data/processed/baseline/baselineAgg.csv", row.names = FALSE)
-df2 <- df
+#df2 <- df
 
+
+
+#' ------------------------------------------------------------------------
 # Assessing data quality --------------------------------------------------
+#' ------------------------------------------------------------------------
+
 #rm(list=ls())
 df      <- read.csv("01_data/processed/baseline/baselineAgg.csv")
 source("02_code/baseline/baselinequalityCheckFunctions.R")

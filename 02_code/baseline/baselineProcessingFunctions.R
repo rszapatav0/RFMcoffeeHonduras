@@ -54,6 +54,9 @@ convert_numeric_columns <- function(df, dictionary) {
         
         # Force conversion to numeric
         df[[column]] <- as.numeric(trimmed_column)
+        
+        # Replace 777 with NA
+        df[[column]][df[[column]] == 777] <- NA
       }
     }
   }
@@ -468,8 +471,8 @@ standardize_distances <- function(df, dictionary) {
 aggregate_data <- function(df, dict, farm_id_col, tab_suffix) {
   
   df <- convert_numeric_columns(df,dictionary)
-  df <- convert_to_dummies(df, dictionary)
   df <- convert_to_dummies_multiple(df, dictionary)
+  df <- convert_to_dummies(df, dictionary)
   
   # Convert binary variables (Y -> 1, others -> 0)
   binary_vars <- dict %>% filter(!is.na(Binaria) & Binaria == 1) %>% pull(new)

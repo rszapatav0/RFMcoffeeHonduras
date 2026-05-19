@@ -77,6 +77,18 @@ combine_datasets <- function(baseline_path, endline_path, id_column = "surveyID"
   colnames(baselineDF) <- gsub("\\.", "/", colnames(baselineDF))
   colnames(endlineDF)  <- gsub("\\.", "/", colnames(endlineDF))
   
+  # Keeping only cleaned variables
+  ## Baseline
+  bl_vars <- intersect(
+    dictionary$new[!is.na(dictionary$joined_clean) & dictionary$baseline == 1],
+    names(baselineDF))
+  baselineDF <- baselineDF %>% select(all_of(bl_vars))
+  ## Baseline
+  el_vars <- intersect(
+    dictionary$new[!is.na(dictionary$joined_clean) &dictionary$endline == 1],
+    names(endlineDF))
+  endlineDF <- endlineDF %>%  select(all_of(el_vars))
+  
   # Save original column classes
   original_classes_bl <- sapply(baselineDF, class)
   original_classes_el <- sapply(endlineDF, class)
@@ -116,18 +128,12 @@ combine_datasets <- function(baseline_path, endline_path, id_column = "surveyID"
   }
   
   # Add time indicator and ensure it's character
-  baselineDF <- baselineDF %>%
-    filter(agreesToSurveyParticipation == 1, !is.na(agreesToSurveyParticipation)) %>%
-    mutate(time = "0")  # Add the time column
-  endlineDF  <- endlineDF  %>%
-    filter(agreesToSurveyParticipation == 1, !is.na(agreesToSurveyParticipation)) %>%
-    mutate(time = "1")
+  baselineDF <- baselineDF %>% mutate(time = "0")
+  endlineDF  <- endlineDF  %>% mutate(time = "1")
   
   # Ensure matching column types by converting all columns to character type
-  baselineDF <- baselineDF %>%
-    mutate(across(everything(), as.character))
-  endlineDF  <- endlineDF  %>%
-    mutate(across(everything(), as.character))
+  baselineDF <- baselineDF %>% mutate(across(everything(), as.character))
+  endlineDF  <- endlineDF  %>% mutate(across(everything(), as.character))
   
   # Find common IDs present in both baseline and endline datasets
   #IDs only once
@@ -175,7 +181,7 @@ combine_datasets <- function(baseline_path, endline_path, id_column = "surveyID"
   ### Force-joining columns based on dictionary.csv ###
   
   # Get columns that need to be force-joined from the dictionary
-  force_join_dict <- dictionary %>% filter(!is.na(force_join))
+  force_join_dict <- dictionary %>% filter(!is.na(force_join) & joined_clean==1)
   
   # Loop through each unique group in the force_join column
   if (combine_type == "long") {
