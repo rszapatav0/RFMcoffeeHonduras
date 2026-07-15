@@ -301,7 +301,6 @@ checkDataQuality <- function(data) {
   
   # 2. Check for Outliers in Key Variables
   key_variables = find_columns_with_suffixes(data)
-  print(key_variables)
   results$outliers    <- lapply(key_variables, function(v) {
     if (v %in% names(data)) {
       # Calculate the Interquartile Range (IQR)
@@ -469,8 +468,7 @@ checkDataQuality <- function(data) {
   library(sf)
   results$validLocation <- check_points_in_polygon(df)
   false_indices <- which(results[["validLocation"]] == FALSE)
-  print(false_indices)
-  
+
   # 9. Check if coffee produced and coffee sold are in the ballpark of each other
   #results$ballpark <- extract_outside_ballpark(df,"amountOfCoffeeProducedLastHarvestInGreenKgs","amountSoldInKgGreen", percent=25)
 

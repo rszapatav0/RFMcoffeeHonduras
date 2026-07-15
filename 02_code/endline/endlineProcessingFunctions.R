@@ -460,7 +460,7 @@ aggregate_data <- function(df, dict, farm_id_col, tab_suffix) {
   # Convert binary variables (Y -> 1, others -> 0)
   binary_vars <- dict %>% filter(!is.na(Binaria) & Binaria == 1) %>% pull(new)
   df <- df %>%
-    mutate(across(all_of(binary_vars), ~ ifelse(. %in% c("Y", "y", "yes", 1), 1, 0)))
+    mutate(across(any_of(binary_vars), ~ ifelse(. %in% c("Y", "y", "yes", 1), 1, 0)))
 
   # Renaming columns based on the tab (el_loop)
   if (tab_suffix == "_trr") {
@@ -469,8 +469,16 @@ aggregate_data <- function(df, dict, farm_id_col, tab_suffix) {
   } else if (tab_suffix == "_buy") {
     df <- df %>% 
       rename(
-        numberOfCoffeeSales = E67C
-    )
+        numberOfCoffeeSales = E67C)
+    
+  } else if (tab_suffix == "_var") {
+    df$numberOfVarietyPlanted <- df$percentageOfVarietyPlanted
+    df <- df %>%
+      group_by(!!sym(farm_id_col)) %>%
+      mutate(percentageOfVarietyPlanted =
+               100*(numberOfVarietyPlanted/sum(numberOfVarietyPlanted, na.rm = TRUE))
+      ) %>% ungroup()
+    
   } else if (tab_suffix == "_typ") {
      # Changing names
      df <- df %>% rename(
@@ -480,6 +488,19 @@ aggregate_data <- function(df, dict, farm_id_col, tab_suffix) {
     # Conditionally standardize measurements before aggregation
     df <- standardize_prices(df, dict)
     df <- standardize_weights(df, dict)
+    
+    ## Creating variables only for intermediaries
+    bn <- sales_repeat_df %>% select(c("_index","_submission__uuid","buyer")) %>%
+      rename("_parent_index"="_index")
+    df <- left_join(df, bn, by=c("_parent_index","_submission__uuid"))
+    rm(bn)
+    varsInter <- c("minimumReceivedPriceForCoffeeInKgGreen","maximumReceivedPriceForCoffeeInKgGreen",
+                   "amountSoldInKgGreen","receivedQualityBonus","receivedQualityDiscount")
+    inter <- c("Ramiro Rosales", "Darío Enamorado",
+               "Recolector Ramiro Rosales","Recolector Darío Enamorado")
+    df <- df %>% mutate(
+      across(all_of(varsInter),~ if_else(
+        buyer %in% inter,.x,NA),.names = "{.col}Inter"))
   }
   
   df_agg <- df %>%

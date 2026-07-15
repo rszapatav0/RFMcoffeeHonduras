@@ -27,6 +27,7 @@ source("02_code/endline/endlineProcessingFunctions.R")
 # Defining file paths
 data_path       <- "01_data/raw/endline/endlineRaw.xlsx"
 changes_path    <- "01_data/processed/endline/endlineCorrections.xlsx"
+ttmAssign_path  <- "01_data/raw/implementation/ttmAssign.csv"
 dictionary_path <- "02_code/dictionary.xlsx"
 output_path     <- "02_code/dictionary.csv"
 
@@ -140,17 +141,56 @@ df <- df %>%
 
 
 # Creating new variables
+## Yield and density
 df$yieldKgPerHa       <- ifelse(df$coffeeAreaLastHarvestInHa_trr == 0,
                                 NA, df$amountOfCoffeeProducedLastHarvestInKgGreen / df$coffeeAreaLastHarvestInHa_trr)
 df$densityPlantsPerHa <- ifelse(df$coffeeAreaLastHarvestInHa_trr == 0,
                                 NA, df$totalCoffeePlantsOnFarm / df$coffeeAreaLastHarvestInHa_trr)
+## Differentiating times
+### Distance to the "gold" number
+df$timeBetweenHarvestAndDeliveryDiff <- abs(df$timeBetweenHarvestAndDelivery-0)
+df$timeBetweenHarvestAndPulpingDiff  <- abs(df$timeBetweenHarvestAndPulping-0)
+df$timeBetweenPulpingAndWashingDiff  <- abs(df$timeBetweenPulpingAndWashing-12) #mode
+df$timeFromWashingToDryCoffeeDiff    <- abs(df$timeFromWashingToDryCoffee-30) #mean
+### Distance to the "gold" range (no substantial differences inside the range)
+df$timeBetweenHarvestAndDeliveryDiffr <- pmax(df$timeBetweenHarvestAndDelivery-6, 0)
+df$timeBetweenHarvestAndPulpingDiffr  <- pmax(df$timeBetweenHarvestAndPulping-2, 0)
+df$timeBetweenPulpingAndWashingDiffr  <- pmax(9-df$timeBetweenHarvestAndPulping,0) + pmax(df$timeBetweenHarvestAndPulping-15,0)
+df$timeFromWashingToDryCoffeeDiffr    <- pmax(6-df$timeFromWashingToDryCoffee,0) + pmax(df$timeFromWashingToDryCoffee-36,0)
+## Probability of selling to the intermediary
+df$probSellInter <- ifelse(is.na(df$maximumReceivedPriceForCoffeeInKgGreenInter_typ),0,1)
+## Percentage of amount sold to the intermediary
+df$percSellInter <- df$amountSoldInKgGreenInter_typ / df$amountSoldInKgGreen_typ
 
 
-# Rename geodata
+# Other changes
+## Rename geodata
 df <- df %>% rename(
   Latitud = '_GPS_latitude',
   Longitud = '_GPS_longitude'
 )
+## People with no sold coffee
+df$numberDifferentBuyersLastHarvest <- replace(
+  df$numberDifferentBuyersLastHarvest, df$amountSoldInKgGreen_typ==0, 0)
+## triedFormalCredit=Y but reasons
+df <- df %>% mutate(
+  across(starts_with("reasonsDidNotTriedCredit"),~ if_else(triedFormalCredit == "Y", NA, .)))
+
+
+# Organizing location variables
+## Reading treatment file
+ttmAssign  <- read.csv(ttmAssign_path, stringsAsFactors = FALSE) %>%
+  group_by(municipality_name, communityOrHamlet_name) %>% slice(1) %>% 
+  ungroup() %>% rename_with(~ paste0(.x, "_ttm"))
+## Creating auxiliar variables
+df$municipality_name_ttm      <- df$producer_municipality
+df$communityOrHamlet_name_ttm <- df$producer_community
+df <- df %>% left_join(ttmAssign, by = c("municipality_name_ttm", "communityOrHamlet_name_ttm"))
+df <- df %>% mutate(
+    department        = coalesce(department, department_ttm),
+    municipality      = coalesce(municipality, municipality_ttm),
+    communityOrHamlet = coalesce(communityOrHamlet, communityOrHamlet_ttm)
+  ) %>% select(-ends_with("_ttm"))
 
 
 # Save

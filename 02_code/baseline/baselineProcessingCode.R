@@ -50,7 +50,7 @@ tabs <- list(
 #' ------------------------------------------------------------------------
 
 ## Step 1: Load data ------------------------------------------------------
-## Loop by tab sheets
+# Loop by tab sheets
 for (tab in names(tabs)) {
   ## Database
   assign(paste0(tab, "_df"), read_excel(data_path, sheet = tab))
@@ -111,6 +111,21 @@ df$yieldKgPerHa       <- ifelse(df$coffeeAreaLastHarvestInHa == 0,
                                 NA, df$amountOfCoffeeProducedLastHarvestInKgGreen / df$coffeeAreaLastHarvestInHa)
 df$densityPlantsPerHa <- ifelse(df$coffeeAreaLastHarvestInHa == 0,
                                 NA, df$totalCoffeePlantsOnFarm / df$coffeeAreaLastHarvestInHa)
+## Differentiating times
+### Distance to the "gold" number
+df$timeBetweenHarvestAndDeliveryDiff <- abs(df$timeBetweenHarvestAndDelivery-0)
+df$timeBetweenHarvestAndPulpingDiff  <- abs(df$timeBetweenHarvestAndPulping-0)
+df$timeBetweenPulpingAndWashingDiff  <- abs(df$timeBetweenPulpingAndWashing-12) #mode
+df$timeFromWashingToDryCoffeeDiff    <- abs(df$timeFromWashingToDryCoffee-30) #mean
+### Distance to the "gold" range (no substantial differences inside the range)
+df$timeBetweenHarvestAndDeliveryDiffr <- pmax(df$timeBetweenHarvestAndDelivery-6, 0)
+df$timeBetweenHarvestAndPulpingDiffr  <- pmax(df$timeBetweenHarvestAndPulping-2, 0)
+df$timeBetweenPulpingAndWashingDiffr  <- pmax(9-df$timeBetweenHarvestAndPulping,0) + pmax(df$timeBetweenHarvestAndPulping-15,0)
+df$timeFromWashingToDryCoffeeDiffr    <- pmax(6-df$timeFromWashingToDryCoffee,0) + pmax(df$timeFromWashingToDryCoffee-36,0)
+## Probability of selling to the intermediary
+df$probSellInter <- ifelse(is.na(df$maximumReceivedPriceForCoffeeInKgGreenInter_typ),0,1)
+## Percentage of amount sold to the intermediary
+df$percSellInter <- df$amountSoldInKgGreenInter_typ / df$amountSoldInKgGreen_typ
 
 
 # Other changes
@@ -130,6 +145,9 @@ no_pest_condition <- str_detect(
   "ningun|ninguna|ninguno|nada|no tuvo|no tiene|no les afecta|no le afect|no lo atac|no la atac|no hubo|no ha tenido|no reconoce|finca nueva|plantación nueva|primer corte")
 df$mainPestsOrDiseasesLastYear[no_pest_condition] <- "non"
 df$E35C <- as.numeric(replace(df$E35C, no_pest_condition, 0))
+## People with no sold coffee
+df$numberDifferentBuyersLastHarvest <- replace(
+  df$numberDifferentBuyersLastHarvest, df$amountSoldInKgGreen_typ==0, 0)
 
 
 # Save 

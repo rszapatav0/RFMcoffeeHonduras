@@ -2,10 +2,6 @@
 packageList <- c("dplyr", "maps", "ggplot2", "sf", "scales", "viridis", "fuzzyjoin")
 lapply(packageList,require,character.only=TRUE)
 
-library(scales) # For donut chart scaling
-library(viridis) # For Viridis color palettes
-library(fuzzyjoin) #Fuzzy join
-
 # Custom function to generate plots based on a dictionary
 generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_dep, spatial_data_mun, spatial_data_com) {
   
@@ -25,6 +21,9 @@ generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_de
       TRUE ~ as.character(time)  # Keep the original value if no match
     ))
   
+  # Colors
+  color1 <- "#440154"
+  color2 <- "#5ec962"
   
   #Load spatial data
   ## National
@@ -57,7 +56,6 @@ generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_de
   
   # Generate grouped bar plots for averages
   print(" ********** Grouped bar plots for averages ********** ")
-  print(bar_avg_vars)
   for (var in bar_avg_vars) {
     
     ## Grouped graphs
@@ -74,11 +72,19 @@ generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_de
             ci_lower = mean_var - qt(0.975, df = n() - 1) * se,   # Límite inferior del IC 95%
             ci_upper = mean_var + qt(0.975, df = n() - 1) * se    # Límite superior del IC 95%
           )
+        ### Getting averages by time
+        line_data <- summary_data %>%
+          group_by(!!sym(grouping_var)) %>% summarise(
+            avg = mean(mean_var, na.rm = TRUE),.groups = "drop")
         ### Grouped bar plot
         p <- ggplot(summary_data, aes_string(x = "treatment_eng", y= "mean_var", fill = grouping_var)) +
           geom_col(position = "dodge") +
           geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), position = position_dodge(width = 0.9), width = 0.25) +
-          scale_fill_viridis_d(option = "C") +  # Viridis color for categorical variables
+          geom_hline(data = line_data,aes(yintercept = avg, color = !!sym(grouping_var)),linewidth = 1,linetype = "dashed", show.legend = FALSE) +
+          #scale_fill_viridis_d(option = "H") +
+          #scale_color_viridis_d(option = "H") +
+          scale_fill_manual(values = c(color1, color2)) +
+          scale_color_manual(values = c(color1, color2)) +
           labs(title = paste("Gráfico de barras de", var, "\nagrupado por", grouping_var), 
                x = "Tratamiento", y = "Promedio",
                caption = "EC: Evaluación de calidad. AT: Asistencia técnica.") +
@@ -111,14 +117,13 @@ generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_de
       theme_minimal() +
       theme(legend.position = "none")
     ### Save plot
-    ggsave(filename = paste0(output_dir, "/", var, "_bar_plot_avg.png"), plot = p)
+    #ggsave(filename = paste0(output_dir, "/", var, "_bar_plot_avg.png"), plot = p)
   }
   
   
   
   # Generate grouped bar plots for sum
   print(" ********** Grouped bar plots for sum ********** ")
-  print(bar_cnt_vars)
   for (var in bar_cnt_vars) {
     
     ## Grouped graphs
@@ -130,10 +135,16 @@ generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_de
           filter(!is.na(treatment_eng) & !is.na(!!sym(grouping_var))) %>%     # To avoid NA's 
           group_by(treatment_eng, !!sym(grouping_var)) %>%
           summarise(mean_var = sum(get(var), na.rm = TRUE))
+        ### Getting averages by time
+        line_data <- summary_data %>%
+          group_by(!!sym(grouping_var)) %>% summarise(
+            avg = mean(mean_var, na.rm = TRUE),.groups = "drop")
         ### Grouped bar plot
         p <- ggplot(summary_data, aes_string(x = "treatment_eng", y= "mean_var", fill = grouping_var)) +
           geom_col(position = "dodge") +
-          scale_fill_viridis_d(option = "C") +  # Viridis color for categorical variables
+          geom_hline(data = line_data,aes(yintercept = avg, color = !!sym(grouping_var)),linewidth = 1,linetype = "dashed", show.legend = FALSE) +
+          scale_fill_manual(values = c(color1, color2)) +
+          scale_color_manual(values = c(color1, color2)) +
           labs(title = paste("Gráfico de barras de", var, "\nagrupado por", grouping_var), 
                x = "Tratamiento", y = "Conteo",
                caption = "EC: Evaluación de calidad. AT: Asistencia técnica.") +
@@ -161,14 +172,13 @@ generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_de
       theme_minimal() +
       theme(legend.position = "none")
     ### Save plot
-    ggsave(filename = paste0(output_dir, "/", var, "_bar_plot_cnt.png"), plot = p)
+    #ggsave(filename = paste0(output_dir, "/", var, "_bar_plot_cnt.png"), plot = p)
   }
   
   
   
   # Generate grouped line plots (assuming time series or continuous variables)
   print(" ********** Grouped line plots ********** ")
-  print(line_vars_y)
   for (line_var_y in line_vars_y) {
     for (line_var_x in line_vars_x) {
       
@@ -177,8 +187,10 @@ generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_de
         for (grouping_var in grouping_vars) {
           ### Grouped line plot
           p <- ggplot(data, aes_string(x = line_var_x, y = line_var_y, color = grouping_var)) +
-            geom_line() +
-            #scale_color_viridis_d(option = "C") +  # Viridis color for the grouped line plot
+            geom_point() +
+            geom_smooth(method = "lm",se = FALSE,linewidth = 1,linetype = "dashed") +
+            scale_fill_manual(values = c(color1, color2)) +
+            scale_color_manual(values = c(color1, color2)) +
             labs(title = paste("Grouped Line Plot of", line_var_y, "\nover", line_var_x,", by", grouping_var),
                  x = line_var_x, y = line_var_y) +
             theme_minimal() +
@@ -191,11 +203,11 @@ generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_de
       ## General graph.
       ### Regular line plot
       p <- ggplot(data, aes_string(x = line_var_x, y = line_var_y)) +
-        geom_line() +
+        geom_point() +
         labs(title = paste("Line Plot of", line_var_y, "\nover", line_var_x), x = line_var_x, y = line_var_y) +
         theme_minimal()
       ### Save plot
-      ggsave(filename = paste0(output_dir, "/", var, "_line_plot.png"), plot = p)
+      #ggsave(filename = paste0(output_dir, "/", var, "_line_plot.png"), plot = p)
     }
   }
   
@@ -203,7 +215,6 @@ generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_de
   
   # Generate donut charts (for categorical variables)
   print(" ********** Donut charts ********** ")
-  print(donut_vars)
   for (var in donut_vars) {
     ## Collapsing data
     data_donut <- data %>%
@@ -229,7 +240,6 @@ generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_de
   
   # Generate choropleth maps
   print(" ********** Choropleth maps ********** ")
-  print(choropleth_vars)
   for (var in choropleth_vars) {
     ## Map by departments
     ### Average by department
@@ -245,10 +255,10 @@ generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_de
       geom_sf(aes(fill = mean_var), color = "black", alpha = 0.6) +
       labs(title = paste("Mapa de", var, "por departamento"), fill = "") +
       theme_minimal() +
-      scale_fill_gradientn(colors = viridis(256), na.value = "white") + 
+      scale_fill_gradientn(colors = rev(viridis(256)), na.value = "white") + 
       theme(axis.text = element_blank(), axis.ticks = element_blank(), axis.title = element_blank())
     ### Save plot
-    ggsave(filename = paste0(output_dir, "/", var, "_choropleth_map_department.png"), plot = p)       
+    #ggsave(filename = paste0(output_dir, "/", var, "_choropleth_map_department.png"), plot = p)       
     
     ## May by municipality
     ### Average by municipality
@@ -272,7 +282,7 @@ generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_de
       #geom_sf_text(aes(label = municipality_name, geometry = geometry), size = 2, color = "black") +
       labs(title = paste("Mapa de", var, "por municipio"), fill = "") +
       theme_minimal() +
-      scale_fill_gradientn(colors = viridis(256), na.value = "white") + 
+      scale_fill_gradientn(colors = rev(viridis(256)), na.value = "white") + 
       theme(axis.text = element_blank(), axis.ticks = element_blank(), axis.title = element_blank())
     ### Save plot
     ggsave(filename = paste0(output_dir, "/", var, "_choropleth_map_municipality.png"), plot = p)
@@ -308,12 +318,12 @@ generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_de
     p <- ggplot() +
       geom_sf(data = spatial_data_hnd, fill = "white", color = "black", alpha = 0.5) +  # Mapa de Honduras
       geom_point(data = merged_data, aes(x = long, y = lat, color = mean_var), size = 1, alpha = 0.7) +  # Puntos del df_basic
-      scale_color_viridis() +
+      scale_color_viridis(direction = -1) +
       labs(title = paste("Mapa de", var, "por comunidad"), color = "") +
       theme_minimal() +
       theme(axis.text = element_blank(), axis.ticks = element_blank(), axis.title = element_blank())
     ### Save plot
-    ggsave(filename = paste0(output_dir, "/", var, "_choropleth_map_community.png"), plot = p)
+    #ggsave(filename = paste0(output_dir, "/", var, "_choropleth_map_community.png"), plot = p)
   }
   
 }

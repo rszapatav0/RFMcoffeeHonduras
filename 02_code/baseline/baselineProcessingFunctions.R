@@ -1,5 +1,5 @@
 # Loading Packages
-packageList <- c("dplyr", "readxl", "purrr", "tidyr", "stringr")
+packageList <- c("dplyr", "readxl", "purrr", "tidyr", "stringr","stringi")
 lapply(packageList,require,character.only=TRUE)
 
 # Function to identify variables inside each spreadsheet 
@@ -129,7 +129,6 @@ standardize_weights <- function(df, dictionary) {
       "lata"  = 33 * 0.453592,    #Latas
       "carga" = 200 * 0.453592,   #Cargas
       "lb"    = 0.453592,         #Libras
-      "galon" = 3*33 * 0.453592,  #Suponiendo que 1galon=3latas
       "other" = 1
     )
     
@@ -477,16 +476,29 @@ aggregate_data <- function(df, dict, farm_id_col, tab_suffix) {
   # Convert binary variables (Y -> 1, others -> 0)
   binary_vars <- dict %>% filter(!is.na(Binaria) & Binaria == 1) %>% pull(new)
   df <- df %>%
-    mutate(across(all_of(binary_vars), ~ ifelse(. %in% c("Y", "y", "yes", 1), 1, 0)))
+    mutate(across(any_of(binary_vars), ~ ifelse(. %in% c("Y", "y", "yes", 1), 1, 0)))
   
   # Conditionally standardize measurements before aggregation
   if (tab_suffix == "_typ") {
     df <- standardize_prices(df, dict)
     df <- standardize_weights(df, dict)
+    
+    ## Creating variables only for intermediaries
+    bn <- sales_repeat_df %>% select(c("ID_ENCUESTA","SALES_REPEAT_ROWID","buyerName"))
+    df <- left_join(df, bn, by=c("ID_ENCUESTA","SALES_REPEAT_ROWID"))
+    rm(bn)
+    varsInter <- c("minimumReceivedPriceForCoffeeInKgGreen","maximumReceivedPriceForCoffeeInKgGreen",
+                   "amountSoldInKgGreen","receivedQualityBonus","receivedQualityDiscount")
+    inter <- c("Ramiro Rosales", "Darío Enamorado",
+               "Recolector Ramiro Rosales","Recolector Darío Enamorado")
+    df <- df %>% mutate(
+      across(all_of(varsInter),~ if_else(
+        buyerName %in% inter,.x,NA),.names = "{.col}Inter"))
   } 
   if (tab_suffix == "_trr") {
     df <- standardize_areas(df, dict)
   } 
+
   df_agg <- df %>%
     group_by(!!sym(farm_id_col)) %>%
     summarise(across(everything(), ~ {

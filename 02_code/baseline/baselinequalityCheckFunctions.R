@@ -489,8 +489,7 @@ checkDataQuality <- function(data) {
   # # 8. Check if surveys are in area of interest
   results$validLocation <- check_points_in_polygon(df)
   false_indices <- which(results[["validLocation"]] == FALSE)
-  print(false_indices)
-  
+
   # 9. Check if coffee produced and coffee sold are in the ballpark of each other
   results$ballpark <- extract_outside_ballpark(df,"amountOfCoffeeProducedLastHarvestInKgGreen","amountSoldInKgGreen_typ", percent=25)
 

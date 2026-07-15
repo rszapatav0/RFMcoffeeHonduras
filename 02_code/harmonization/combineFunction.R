@@ -97,34 +97,26 @@ combine_datasets <- function(baseline_path, endline_path, id_column = "surveyID"
   ## Replace NAs in columns used for matching with empty strings to avoid issues during fuzzy matching
   #matching_columns <- c("communityOrHamlet", "municipality", "sellsToIntermediary", "department")
   matching_columns <- c("communityOrHamlet", "municipality", "department")
-  ## Ensure the baseline columns exist
-  existing_columns_baseline <- matching_columns[matching_columns %in% colnames(baselineDF)]
+  ## Ensure the endline columns exist
+  existing_columns_endline  <- matching_columns[matching_columns %in% colnames(endlineDF)]
   
-  if (length(existing_columns_baseline) > 0) {
+  if (length(existing_columns_endline) > 0) {
     # Replace NA values for baseline columns in combinedDF
-    baselineDF <- baselineDF %>%
-      mutate(across(all_of(existing_columns_baseline), ~replace_na(., "")))
+    endlineDF <- endlineDF %>%
+      mutate(across(all_of(existing_columns_endline), ~replace_na(., "")))
     
     # Replace NA values for matching columns in ttmAssign
     ttmAssign <- ttmAssign %>%
       mutate(across(all_of(matching_columns), ~replace_na(., "")))
     
-    # Perform the fuzzy join on the baseline columns
-    # baselineDF <- stringdist_left_join(
-    #   baselineDF, ttmAssign,
-    #   #by = c("communityOrHamlet", "municipality", "sellsToIntermediary", "department"),
-    #   by = c("communityOrHamlet", "municipality", "department"),
-    #   max_dist = 1,  # Set a maximum distance for fuzzy matching
-    #   distance_col = NULL
-    # ) %>%
-    #   # Remove duplicate columns from the join
-    #   select(-ends_with(".y")) %>%  # Remove all columns that end with ".y" (i.e., from ttmAssign)
-    #   rename_with(~ gsub(".x$", "", .), ends_with(".x"))  # Remove ".x" suffix from the original columns
-    
     # Simple join
-    baselineDF <- baselineDF %>% 
+    endlineDF <- endlineDF %>% 
       left_join(ttmAssign,
-                by = c("communityOrHamlet", "municipality", "department"))
+                by = c("communityOrHamlet", "municipality", "department")) %>%
+      mutate(
+        treatment = ifelse(is.na(treatment), "Control", treatment),
+        treatment_eng = ifelse(is.na(treatment_eng), "Control", treatment_eng)
+      )
   }
   
   # Add time indicator and ensure it's character
@@ -171,8 +163,14 @@ combine_datasets <- function(baseline_path, endline_path, id_column = "surveyID"
   if (combine_type == "wide") {
     # Perform a left join on surveyID to get a wide dataset
     combinedDF <- baselineDF %>%
-      left_join(endlineDF, by = id_column, suffix = c("_baseline", ""),
+      rename_with(~ paste0(.x, "_baseline"),-all_of(c(
+        id_column,"time"))) %>%
+      left_join(endlineDF,by = id_column, suffix = c("_baseline", ""),
                 relationship = "one-to-one")
+    
+    # Unifying location variables
+    #combinedDF <- combinedDF %>%
+      #mutate(department = coalesce(department, department_baseline))
   } else {
     # Combine datasets in long format (default behavior)
     combinedDF <- bind_rows(baselineDF, endlineDF)
@@ -197,24 +195,17 @@ combine_datasets <- function(baseline_path, endline_path, id_column = "surveyID"
       combinedDF <- combinedDF %>%
         select(-all_of(columns_to_merge[-1]))
     }
-    # } elseif (combine_type == "wide") {
-    # # Loop through each unique group in the force_join column - wide
-    #   force_join_names <- force_join_dict %>% pull(new)
-    #   for (name in intersect(force_join_names, unmatchedBaselineCols)) {
-    #     new_name <- paste0(name, "_baseline")
-    #     colnames(combinedDF)[colnames(combinedDF) == name] <- new_name
-    #   }
-  }
-
-  #Expanding treatment var
-  if (combine_type == "long") {
+    
+    #Expanding treatment var
     combinedDF <- combinedDF %>%
-      group_by(surveyID) %>%
+      group_by(!!sym(id_column)) %>%
       mutate(treatment     = first(na.omit(treatment)),
              treatment_eng = first(na.omit(treatment_eng)) ) %>%  # Apply the same treatment to both time == 0 and time == 1
       ungroup()
+    
   }
-  
+
+
   # Restore the original classes of the columns
   combinedDF <- restore_original_classes(combinedDF, original_classes_bl, original_classes_el)
   return(combinedDF)

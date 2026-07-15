@@ -97,7 +97,9 @@ for (var in vars_corregidas) {
 #' ========================================================================
 
 #' ------------------------------------------------------------------------
-## Excel corrections to sales_process_repeat -----------
+## Excel corrections -----------
+
+### sales_process_repeat -------
 
 # Reading Excel
 sales_process_repeat_chg <- read_excel(changes_path, sheet = "sales_process_repeat")
@@ -132,7 +134,41 @@ for (var in vars_corregidas) {
     select(-all_of(var_cor), -matches("_mapvar$"))
 }
 
-rm("base_chg","area_terr_chg","sales_process_repeat_chg",
+### sales_repeat -------
+
+# Reading Excel
+sales_repeat_chg <- read_excel(changes_path, sheet = "sales_repeat")
+
+# Changing values
+## Variables to change
+vars_corregidas <- names(sales_repeat_chg)[
+  !(names(sales_repeat_chg) %in% c(
+    "ID_ENCUESTA","SALES_REPEAT_ROWID","ROWUUID","commentsOnChanges"))]
+
+## Loop by var
+for (var in vars_corregidas) {
+  ### Matching name
+  var_cor <- paste0(var, "_mapvar")
+  ### Map for observations with changes
+  map_var <- sales_repeat_chg %>%
+    filter(!is.na(.data[[var]])) %>%
+    select("ID_ENCUESTA","SALES_REPEAT_ROWID","ROWUUID", !!sym(var))
+  ### Changing df
+  sales_repeat_df <- sales_repeat_df %>%
+    left_join(map_var,
+              by = c("ID_ENCUESTA","SALES_REPEAT_ROWID","ROWUUID"), 
+              suffix = c("", "_mapvar")) %>%
+    mutate(
+      !!sym(var) := ifelse(!is.na(.data[[var_cor]]),
+                           .data[[var_cor]],
+                           .data[[var]])
+    )
+  ### Cleaning auxiliary columns
+  sales_repeat_df <- sales_repeat_df %>%
+    select(-all_of(var_cor), -matches("_mapvar$"))
+}
+
+rm("base_chg","area_terr_chg","sales_process_repeat_chg","sales_repeat_chg",
    "map_var","vars_corregidas","var","var_cor")
 
 
@@ -424,8 +460,8 @@ sales_process_repeat_df <- left_join(
 
 # Assigning values to sales_repeat_df
 df_quan_sr <- df_quan %>%
-  select(c(ID_ENCUESTA,SALES_REPEAT_ROWID,formInWhichCoffeeWasSold,amountCoffeeSold)) %>%
-  group_by(ID_ENCUESTA,SALES_REPEAT_ROWID,formInWhichCoffeeWasSold,amountCoffeeSold)
+  select(ID_ENCUESTA,SALES_REPEAT_ROWID,formInWhichCoffeeWasSold,amountCoffeeSold) %>%
+  distinct()
 sales_repeat_df <- sales_repeat_df %>%
   select(-c(amountCoffeeSold,formInWhichCoffeeWasSold))
 sales_repeat_df <- left_join(

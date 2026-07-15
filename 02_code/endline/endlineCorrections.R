@@ -97,6 +97,42 @@ for (var in vars_corregidas) {
 }
 
 
+#' ------------------------------------------------------------------------
+## Organizing locations ---------------------------------------------------
+
+### Missing locations ----
+#' Some producers with same_community=Y don't have information from location on
+#' the raw database. Location was therefore replaced by the one indicated on the bl.
+correcciones <- tibble(
+  surveyID = c(
+    "2023-10-06-T-838-X-764","2023-10-06-T-855-X-160","2023-10-05-T-484-X-543","2023-10-06-T-301-X-479",
+    "2023-10-05-T-262-X-940","2023-10-06-T-294-X-685","2023-10-05-T-23-X-957","2023-10-06-T-755-X-421",
+    "2023-10-05-T-723-X-665","2023-10-06-T-663-X-931"),
+  department_corr = c(
+    "lempira","lempira","lempira","lempira",
+    "lempira","lempira","lempira","lempira",
+    "lempira","lempira"),
+  municipality_corr = c(
+    "srafael","srafael","srafael","srafael",
+    "srafael","srafael","srafael","srafael",
+    "srafael","iguala"),
+  community_corr = c(
+    "campanario","campanario","sjose","smiguel",
+    "smiguel","spedrito","sjose","smiguel",
+    "sjose","rcolorado"))
+
+base_df <- base_df %>%
+  left_join(correcciones, by = "surveyID") %>%
+  mutate(
+    department        = coalesce(department, department_corr),
+    municipality      = coalesce(municipality, municipality_corr),
+    communityOrHamlet = coalesce(communityOrHamlet, community_corr)
+  ) %>%
+  select(-ends_with("_corr"))
+
+
+"si triedFormalCredit=Y, cambiar reasonsDidNotTriedCredit por ."
+
 
 #' ========================================================================
 #  lands sheet --------------------------------------------------------
@@ -179,4 +215,42 @@ for (var in vars_corregidas) {
     select(-all_of(var_cor), -matches("_mapvar$"))
 }
 
-rm(sales_process_repeat_chg,lands_chg,vars_corregidas,var,var_cor,map_var)
+
+
+#' ========================================================================
+#  sales_repeat -----------------------------------------------------------
+#' ========================================================================
+
+# Reading Excel
+sales_repeat_chg <- read_excel(changes_path, sheet = "sales_repeat")
+
+# Changing values
+## Variables to change
+vars_corregidas <- names(sales_repeat_chg)[
+  !(names(sales_repeat_chg) %in% c(
+    "NCX","_submission__uuid","commentsOnChanges"))]
+
+## Loop by var
+for (var in vars_corregidas) {
+  ### Matching name
+  var_cor <- paste0(var, "_mapvar")
+  ### Map for observations with changes
+  map_var <- sales_repeat_chg %>%
+    filter(!is.na(.data[[var]])) %>%
+    select("NCX","_submission__uuid", !!sym(var))
+  ### Changing df
+  sales_repeat_df <- sales_repeat_df %>%
+    left_join(map_var,
+              by = c("NCX","_submission__uuid"), 
+              suffix = c("", "_mapvar")) %>%
+    mutate(
+      !!sym(var) := ifelse(!is.na(.data[[var_cor]]),
+                           .data[[var_cor]],
+                           .data[[var]])
+    )
+  ### Cleaning auxiliary columns
+  sales_repeat_df <- sales_repeat_df %>%
+    select(-all_of(var_cor), -matches("_mapvar$"))
+}
+
+rm(sales_repeat_chg,sales_process_repeat_chg,lands_chg,vars_corregidas,var,var_cor,map_var,correcciones)

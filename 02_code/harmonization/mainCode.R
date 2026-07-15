@@ -48,7 +48,6 @@ long_file     <- "01_data/processed/harmonization/longDF.csv"
 wide_file     <- "01_data/processed/harmonization/wideDF.csv"
 tables_output <- "03_tables/harmonization"
 plots_output  <- "04_plots/harmonization"
-#output_dir    <- "Results"
 
 
 
@@ -63,11 +62,6 @@ write.csv(longDF, file = long_file, row.names = FALSE)
 
 ## WideDF
 wideDF <- combine_datasets(baseline_path, endline_path,"surveyID",var_dict_file,ttm_file, combine_type = "wide")
-wideDF <- wideDF %>%
-  rename(
-    totalFarmAreaInHa_trr_baseline = totalParcelAreaInHa_trr,
-    totalAreaUsedForAgricultureInHa_trr_baseline = totalAreaUsedForAgricultureInHa, 
-    coffeeAreaLastHarvestInHa_trr_baseline       = coffeeAreaLastHarvestInHa)
 write.csv(wideDF, file = wide_file, row.names = FALSE)
 
 
@@ -77,6 +71,7 @@ write.csv(wideDF, file = wide_file, row.names = FALSE)
 #' ------------------------------------------------------------------------
 
 wideDF  <- read.csv(wide_file)
+colnames(wideDF) <- gsub("\\.", "/", colnames(wideDF))
 results <- run_regression_models(
   var_dict_file, wideDF, paste0(tables_output, "/model_summaries.html"))
 
@@ -93,8 +88,36 @@ longDF <- longDF %>%
     farmAspectsImproved == "none" ~ 0,
     TRUE ~ 1
   ))
+win.graph()
 generate_plots(var_dict_file, longDF, plots_output, spatial_data_dep, spatial_data_mun, spatial_data_com)
 
 
 # Print the completion message
 cat("All functions have been executed successfully./n")
+
+
+
+
+
+
+
+
+
+
+
+## Descriptive statistics -------------------------------------------------
+# X_corr <- DF[, 1:number_covariables]
+# colnames(X_corr) <- X_names[1:number_covariables]
+# 
+# summ_stats <- fBasics::basicStats(X_corr)
+# summ_stats <- as.data.frame(t(summ_stats))
+# summ_stats <- summ_stats %>% 
+#   select("nobs", "Mean", "Stdev", "Minimum", "1. Quartile", "Median", "3. Quartile", "Maximum") %>%
+#   rename('No. Obs.'='nobs', 'St. Dev.'='Stdev', 'Lower quartile'='1. Quartile', 'Upper quartile'='3. Quartile')
+# ### Printing in HTML
+# summ_stats_table <- kable(summ_stats, 'html', digits=3)
+# kable_styling(summ_stats_table,
+#               bootstrap_options=c("striped", "hover", "condensed", "responsive"),
+#               full_width=FALSE) %>%
+#   save_kable("./05_Tables/CF/1_DescriptiveStatistics.html")
+
