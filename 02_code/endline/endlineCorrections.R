@@ -254,3 +254,44 @@ for (var in vars_corregidas) {
 }
 
 rm(sales_repeat_chg,sales_process_repeat_chg,lands_chg,vars_corregidas,var,var_cor,map_var,correcciones)
+
+
+#' ------------------------------------------------------------------------
+## Organizing intermediary var from base_df ---------------------
+
+# Creating dummies for intermediaries from sales_repeat
+df_inter <- sales_repeat_df %>%
+  select(-c("_index")) %>% rename(
+    "_index"="_parent_index",
+    "_uuid" ="_submission__uuid")
+df_inter$ramiro <- ifelse(df_inter$buyer %in% c("Ramiro Rosales", "Recolector Ramiro Rosales"),1, 0)
+df_inter$dario  <- ifelse(df_inter$buyer %in% c("Darío Enamorado", "Recolector Darío Enamorado"),1, 0)
+
+# Aggregating at producer level for base_df
+df_inter <- df_inter %>%
+  group_by(`_uuid`, `_index`) %>%
+  summarise(
+    ramiro = max(ramiro, na.rm = TRUE),
+    dario  = max(dario, na.rm = TRUE),
+    .groups = "drop"
+  )
+df_inter$sum <- df_inter$dario+df_inter$ramiro
+
+# Joining to base_df
+base_df <- left_join(base_df, df_inter, by = c("_index","_uuid"))
+base_df <- base_df %>%
+  mutate(
+    sellsToIntermediary = case_when(
+      sellsToIntermediary=="ninguno" & ramiro==1 & dario==0 ~ "ramiro",
+      sellsToIntermediary=="ninguno" & ramiro==0 & dario==1 ~ "dario",
+      sellsToIntermediary=="dario"   & ramiro==1 & dario==0 ~ "ramiro",
+      sellsToIntermediary=="dario"   & ramiro==0 & dario==0 ~ "ninguno",
+      sellsToIntermediary=="ramiro"  & ramiro==0 & dario==1 ~ "dario",
+      sellsToIntermediary=="ramiro"  & ramiro==0 & dario==0 ~ "ninguno",
+      ramiro==1 & dario==1 ~ "darioYramiro",
+      sellsToIntermediary=="becamo" ~ "felix", #The labels are with Felix, not becamo
+      TRUE ~ sellsToIntermediary)) %>%
+  select(-c(ramiro,dario,sum))
+
+# Removing variables
+rm(df_inter)

@@ -148,6 +148,11 @@ df$E35C <- as.numeric(replace(df$E35C, no_pest_condition, 0))
 ## People with no sold coffee
 df$numberDifferentBuyersLastHarvest <- replace(
   df$numberDifferentBuyersLastHarvest, df$amountSoldInKgGreen_typ==0, 0)
+## sellsToIntermediary only for Darío and Ramiro
+df <- df %>% mutate(
+  sellsToIntermediary = case_when(
+    sellsToIntermediary %in% c("becamo","felix") ~ "ninguno",
+    TRUE ~ sellsToIntermediary))
 
 
 # Save 

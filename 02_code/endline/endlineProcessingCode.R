@@ -163,20 +163,6 @@ df$probSellInter <- ifelse(is.na(df$maximumReceivedPriceForCoffeeInKgGreenInter_
 df$percSellInter <- df$amountSoldInKgGreenInter_typ / df$amountSoldInKgGreen_typ
 
 
-# Other changes
-## Rename geodata
-df <- df %>% rename(
-  Latitud = '_GPS_latitude',
-  Longitud = '_GPS_longitude'
-)
-## People with no sold coffee
-df$numberDifferentBuyersLastHarvest <- replace(
-  df$numberDifferentBuyersLastHarvest, df$amountSoldInKgGreen_typ==0, 0)
-## triedFormalCredit=Y but reasons
-df <- df %>% mutate(
-  across(starts_with("reasonsDidNotTriedCredit"),~ if_else(triedFormalCredit == "Y", NA, .)))
-
-
 # Organizing location variables
 ## Reading treatment file
 ttmAssign  <- read.csv(ttmAssign_path, stringsAsFactors = FALSE) %>%
@@ -187,10 +173,29 @@ df$municipality_name_ttm      <- df$producer_municipality
 df$communityOrHamlet_name_ttm <- df$producer_community
 df <- df %>% left_join(ttmAssign, by = c("municipality_name_ttm", "communityOrHamlet_name_ttm"))
 df <- df %>% mutate(
-    department        = coalesce(department, department_ttm),
-    municipality      = coalesce(municipality, municipality_ttm),
-    communityOrHamlet = coalesce(communityOrHamlet, communityOrHamlet_ttm)
-  ) %>% select(-ends_with("_ttm"))
+  department        = coalesce(department, department_ttm),
+  municipality      = coalesce(municipality, municipality_ttm),
+  communityOrHamlet = coalesce(communityOrHamlet, communityOrHamlet_ttm)
+) %>% select(-ends_with("_ttm"))
+
+
+# Other changes
+## Rename geodata
+df <- df %>% rename(
+  Latitud = '_GPS_latitude',
+  Longitud = '_GPS_longitude'
+)
+## People with no sold coffee
+df$numberDifferentBuyersLastHarvest <- replace(
+  df$numberDifferentBuyersLastHarvest, df$amountSoldInKgGreen_typ==0, 0)
+## sellsToIntermediary only for Darío and Ramiro
+df <- df %>% mutate(
+  sellsToIntermediary = case_when(
+    sellsToIntermediary %in% c("becamo","felix") ~ "ninguno",
+    TRUE ~ sellsToIntermediary))
+## triedFormalCredit=Y but reasons
+df <- df %>% mutate(
+  across(starts_with("reasonsDidNotTriedCredit"),~ if_else(triedFormalCredit == "Y", NA, .)))
 
 
 # Save

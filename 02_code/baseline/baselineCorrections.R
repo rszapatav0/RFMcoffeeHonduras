@@ -471,5 +471,95 @@ sales_repeat_df <- left_join(
 rm(cases,condition,df_quan,df_quan_spr,df_quan_sr,i)
 
 
+#' ------------------------------------------------------------------------
+## Organizing intermediary var from base_df ---------------------
+
+# Creating dummies for intermediaries from sales_repeat
+df_inter <- sales_repeat_df
+df_inter$ramiro <- ifelse(df_inter$buyerName %in% c("Ramiro Rosales", "Recolector Ramiro Rosales"),1, 0)
+df_inter$dario  <- ifelse(df_inter$buyerName %in% c("Darío Enamorado", "Recolector Darío Enamorado"),1, 0)
+
+# Aggregating at producer level for base_df
+df_inter <- df_inter %>%
+  group_by(ID_ENCUESTA) %>%
+  summarise(
+    ramiro = max(ramiro, na.rm = TRUE),
+    dario  = max(dario, na.rm = TRUE),
+    .groups = "drop"
+  )
+df_inter$sum <- df_inter$dario+df_inter$ramiro
+
+# Joining to base_df
+base_df <- left_join(base_df, df_inter, by = c("ID_ENCUESTA"))
+base_df <- base_df %>%
+  mutate(
+    sellsToIntermediary = case_when(
+      sellsToIntermediary=="ninguno" & ramiro==1 & dario==0 ~ "ramiro",
+      sellsToIntermediary=="ninguno" & ramiro==0 & dario==1 ~ "dario",
+      sellsToIntermediary=="dario"   & ramiro==1 & dario==0 ~ "ramiro",
+      sellsToIntermediary=="dario"   & ramiro==0 & dario==0 ~ "ninguno",
+      sellsToIntermediary=="ramiro"  & ramiro==0 & dario==1 ~ "dario",
+      sellsToIntermediary=="ramiro"  & ramiro==0 & dario==0 ~ "ninguno",
+      ramiro==1 & dario==1 ~ "darioYramiro",
+      TRUE ~ sellsToIntermediary)) %>%
+  select(-c(ramiro,dario,sum))
+#filter <- base_df %>% select(c(sellsToIntermediary,dario,ramiro,sum)) %>% filter(sum > 1)
+
+# Removing variables
+rm(df_inter)
 
 
+# ### Version with felix and becamo ----
+# # Creating dummies for intermediaries from sales_repeat
+# df_inter <- sales_repeat_df
+# df_inter$ramiro <- ifelse(df_inter$buyerName %in% c("Ramiro Rosales", "Recolector Ramiro Rosales"),1, 0)
+# df_inter$dario  <- ifelse(df_inter$buyerName %in% c("Darío Enamorado", "Recolector Darío Enamorado"),1, 0)
+# df_inter$becamo <- ifelse(df_inter$buyerName %in% c("Becamo"),1, 0)
+# df_inter$felix  <- ifelse(df_inter$buyerName %in% c("Felix Maldonado"),1, 0)
+# 
+# # Aggregating at producer level for base_df
+# df_inter <- df_inter %>%
+#   group_by(ID_ENCUESTA) %>%
+#   summarise(
+#     ramiro = max(ramiro, na.rm = TRUE),
+#     dario  = max(dario, na.rm = TRUE),
+#     becamo = max(becamo, na.rm = TRUE),
+#     felix  = max(felix, na.rm = TRUE),
+#     .groups = "drop"
+#   )
+# df_inter$sum <- df_inter$becamo+df_inter$dario+df_inter$felix+df_inter$ramiro
+# 
+# # Joining to base_df
+# base_df <- left_join(base_df, df_inter, by = c("ID_ENCUESTA"))
+# base_df <- base_df %>%
+#   mutate(
+#     sellsToIntermediary = case_when(
+#       sellsToIntermediary=="ninguno" & ramiro==1 & dario==0 & becamo==0 & felix==0 ~ "ramiro",
+#       sellsToIntermediary=="ninguno" & ramiro==0 & dario==1 & becamo==0 & felix==0 ~ "dario",
+#       sellsToIntermediary=="ninguno" & ramiro==0 & dario==0 & becamo==1 & felix==0 ~ "becamo",
+#       sellsToIntermediary=="ninguno" & ramiro==0 & dario==0 & becamo==0 & felix==1 ~ "felix",
+#       sellsToIntermediary=="dario"   & ramiro==1 & dario==0 & becamo==0 & felix==0 ~ "ramiro",
+#       sellsToIntermediary=="dario"   & ramiro==0 & dario==0 & becamo==1 & felix==0 ~ "becamo",
+#       sellsToIntermediary=="dario"   & ramiro==0 & dario==0 & becamo==0 & felix==1 ~ "felix",
+#       sellsToIntermediary=="dario"   & ramiro==0 & dario==0 & becamo==0 & felix==0 ~ "ninguno",
+#       sellsToIntermediary=="ramiro"  & ramiro==0 & dario==1 & becamo==0 & felix==0 ~ "dario",
+#       sellsToIntermediary=="ramiro"  & ramiro==0 & dario==0 & becamo==1 & felix==0 ~ "becamo",
+#       sellsToIntermediary=="ramiro"  & ramiro==0 & dario==0 & becamo==0 & felix==1 ~ "felix",
+#       sellsToIntermediary=="ramiro"  & ramiro==0 & dario==0 & becamo==0 & felix==0 ~ "ninguno",
+#       sellsToIntermediary=="becamo"  & ramiro==1 & dario==0 & becamo==0 & felix==0 ~ "ramiro",
+#       sellsToIntermediary=="becamo"  & ramiro==0 & dario==1 & becamo==0 & felix==0 ~ "dario",
+#       sellsToIntermediary=="becamo"  & ramiro==0 & dario==0 & becamo==0 & felix==1 ~ "felix",
+#       sellsToIntermediary=="becamo"  & ramiro==0 & dario==0 & becamo==0 & felix==0 ~ "ninguno",
+#       sellsToIntermediary=="felix"   & ramiro==1 & dario==0 & becamo==0 & felix==0 ~ "ramiro",
+#       sellsToIntermediary=="felix"   & ramiro==0 & dario==1 & becamo==0 & felix==0 ~ "dario",
+#       sellsToIntermediary=="felix"   & ramiro==0 & dario==0 & becamo==1 & felix==0 ~ "becamo",
+#       sellsToIntermediary=="felix"   & ramiro==0 & dario==0 & becamo==0 & felix==0 ~ "ninguno",
+#       ramiro==1 & dario==1 & becamo==0 & felix==0 ~ "darioYramiro",
+#       ramiro==0 & dario==1 & becamo==1 & felix==0 ~ "becamoYdario",
+#       ramiro==1 & dario==0 & becamo==1 & felix==0 ~ "becamoYramiro",
+#       TRUE ~ sellsToIntermediary)) %>%
+#   select(-c(ramiro,dario,felix,becamo,sum))
+# #filter <- base_df %>% select(c(sellsToIntermediary,dario,ramiro,becamo,felix,sum)) %>% filter(sum > 1)
+# 
+# # Removing variables
+# rm(df_inter)

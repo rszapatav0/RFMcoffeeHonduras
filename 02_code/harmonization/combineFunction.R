@@ -107,6 +107,7 @@ combine_datasets <- function(baseline_path, endline_path, id_column = "surveyID"
     
     # Replace NA values for matching columns in ttmAssign
     ttmAssign <- ttmAssign %>%
+      select(-sellsToIntermediary) %>%
       mutate(across(all_of(matching_columns), ~replace_na(., "")))
     
     # Simple join
