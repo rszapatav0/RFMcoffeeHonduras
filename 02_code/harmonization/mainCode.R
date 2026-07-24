@@ -72,8 +72,8 @@ write.csv(wideDF, file = wide_file, row.names = FALSE)
 
 wideDF  <- read.csv(wide_file)
 colnames(wideDF) <- gsub("\\.", "/", colnames(wideDF))
-results <- run_regression_models(
-  var_dict_file, wideDF, paste0(tables_output, "/model_summaries.html"))
+# results <- run_regression_models(
+#   var_dict_file, wideDF, paste0(tables_output, "/model_summaries.html"))
 
 
 #' ------------------------------------------------------------------------

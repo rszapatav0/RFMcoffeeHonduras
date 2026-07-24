@@ -2,7 +2,7 @@
 #' Processing the RFM 2023 baseline survey data
 #' Author:       Federico Ceballos
 #' Creation:     August, 2024
-#' Last edition: May, 2026
+#' Last edition: July, 2026
 #' Editor:       Raquel Sofía
 #' 
 #' This code:    Processes the Baseline database from baselineRaw.xlsx to 
@@ -115,12 +115,12 @@ df$densityPlantsPerHa <- ifelse(df$coffeeAreaLastHarvestInHa == 0,
 ### Distance to the "gold" number
 df$timeBetweenHarvestAndDeliveryDiff <- abs(df$timeBetweenHarvestAndDelivery-0)
 df$timeBetweenHarvestAndPulpingDiff  <- abs(df$timeBetweenHarvestAndPulping-0)
-df$timeBetweenPulpingAndWashingDiff  <- abs(df$timeBetweenPulpingAndWashing-12) #mode
+df$timeBetweenPulpingAndWashingDiff  <- abs(df$timeBetweenPulpingAndWashing-15)
 df$timeFromWashingToDryCoffeeDiff    <- abs(df$timeFromWashingToDryCoffee-30) #mean
 ### Distance to the "gold" range (no substantial differences inside the range)
 df$timeBetweenHarvestAndDeliveryDiffr <- pmax(df$timeBetweenHarvestAndDelivery-6, 0)
-df$timeBetweenHarvestAndPulpingDiffr  <- pmax(df$timeBetweenHarvestAndPulping-2, 0)
-df$timeBetweenPulpingAndWashingDiffr  <- pmax(9-df$timeBetweenHarvestAndPulping,0) + pmax(df$timeBetweenHarvestAndPulping-15,0)
+df$timeBetweenHarvestAndPulpingDiffr  <- pmax(df$timeBetweenHarvestAndPulping-6, 0)
+df$timeBetweenPulpingAndWashingDiffr  <- pmax(14-df$timeBetweenPulpingAndWashing,0) + pmax(df$timeBetweenPulpingAndWashing-16,0)
 df$timeFromWashingToDryCoffeeDiffr    <- pmax(6-df$timeFromWashingToDryCoffee,0) + pmax(df$timeFromWashingToDryCoffee-36,0)
 ## Probability of selling to the intermediary
 df$probSellInter <- ifelse(is.na(df$maximumReceivedPriceForCoffeeInKgGreenInter_typ),0,1)
@@ -153,6 +153,13 @@ df <- df %>% mutate(
   sellsToIntermediary = case_when(
     sellsToIntermediary %in% c("becamo","felix") ~ "ninguno",
     TRUE ~ sellsToIntermediary))
+## bonus variables for inter
+df <- df %>% mutate(
+  receivedQualityBonusInter_typ = if_else(
+    is.na(maximumReceivedPriceForCoffeeInKgGreenInter_typ), NA, receivedQualityBonusInter_typ),
+  receivedQualityDiscountInter_typ = if_else(
+    is.na(maximumReceivedPriceForCoffeeInKgGreenInter_typ), NA, receivedQualityDiscountInter_typ)
+)
 
 
 # Save 

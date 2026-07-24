@@ -10,16 +10,20 @@ generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_de
   data <- data_file
   data <- data %>%
     mutate(treatment_eng = case_when(
-      treatment_eng == "Quality evaluation" ~ "EC",
-      treatment_eng == "Technical assistance" ~ "AT",
-      treatment_eng == "Technical assistance and quality evaluation" ~ "EC + AT",
+      treatment_eng == "Quality evaluation" ~ "QE",
+      treatment_eng == "Technical assistance" ~ "TA",
+      treatment_eng == "Technical assistance and quality evaluation" ~ "QE + TA",
       TRUE ~ treatment_eng  # Keep the original value if no match
     )) %>%
     mutate(time = case_when(
-      time == 0 ~ "Línea base",
-      time == 1 ~ "Línea final",
+      time == 0 ~ "Baseline",
+      time == 1 ~ "Endline",
       TRUE ~ as.character(time)  # Keep the original value if no match
     ))
+  # Relevel
+  data <- data %>%
+    mutate(treatment_eng = factor(
+        treatment_eng,levels = c("Control", "QE", "TA", "QE + TA")))
   
   # Colors
   color1 <- "#440154"
@@ -85,9 +89,9 @@ generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_de
           #scale_color_viridis_d(option = "H") +
           scale_fill_manual(values = c(color1, color2)) +
           scale_color_manual(values = c(color1, color2)) +
-          labs(title = paste("Gráfico de barras de", var, "\nagrupado por", grouping_var), 
-               x = "Tratamiento", y = "Promedio",
-               caption = "EC: Evaluación de calidad. AT: Asistencia técnica.") +
+          labs(title = paste("Bar chart of", var, "\ngrouped by", grouping_var), 
+               x = "Treatment", y = "Average",
+               caption = "QE: Quality Evaluation. TA: Technical Assistance.") +
           theme_minimal() +
           theme(legend.position = "bottom") +
           guides(fill = guide_legend(title = NULL))
@@ -111,9 +115,9 @@ generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_de
     p <- ggplot(summary_data, aes_string(x = "treatment_eng", y = "mean_var", fill = "treatment_eng")) +
       geom_col() +
       scale_fill_viridis_d(option = "C") +  # Viridis color for the regular bar plot
-      labs(title = paste("Gráfico de barras de", var), 
-           x = "Tratamiento", y = "Promedio",
-           caption = "EC: Evaluación de calidad. AT: Asistencia técnica.") +
+      labs(title = paste("Bar chart of", var), 
+           x = "Treatment", y = "Average",
+           caption = "QE: Quality Evaluation. TA: Technical Assistance.") +
       theme_minimal() +
       theme(legend.position = "none")
     ### Save plot
@@ -145,9 +149,9 @@ generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_de
           geom_hline(data = line_data,aes(yintercept = avg, color = !!sym(grouping_var)),linewidth = 1,linetype = "dashed", show.legend = FALSE) +
           scale_fill_manual(values = c(color1, color2)) +
           scale_color_manual(values = c(color1, color2)) +
-          labs(title = paste("Gráfico de barras de", var, "\nagrupado por", grouping_var), 
-               x = "Tratamiento", y = "Conteo",
-               caption = "EC: Evaluación de calidad. AT: Asistencia técnica.") +
+          labs(title = paste("Bar chart of", var, "\ngrouped by", grouping_var), 
+               x = "Treatment", y = "Count",
+               caption = "QE: Quality Evaluation. TA: Technical Assistance.") +
           theme_minimal() +
           theme(legend.position = "bottom") +
           guides(fill = guide_legend(title = NULL))
@@ -166,9 +170,9 @@ generate_plots <- function(var_dict_file, data_file, output_dir, spatial_data_de
     p <- ggplot(summary_data, aes_string(x = "treatment_eng", y = "mean_var", fill = "treatment_eng")) +
       geom_col() +
       scale_fill_viridis_d(option = "C") +  # Viridis color for the regular bar plot
-      labs(title = paste("Gráfico de barras de", var), 
-           x = "Tratamiento", y = "Conteo",
-           caption = "EC: Evaluación de calidad. AT: Asistencia técnica.") +
+      labs(title = paste("Bar chart of", var), 
+           x = "Treatment", y = "Count",
+           caption = "QE: Quality Evaluation. TA: Technical Assistance.") +
       theme_minimal() +
       theme(legend.position = "none")
     ### Save plot
