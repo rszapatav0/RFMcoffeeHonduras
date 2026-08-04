@@ -379,6 +379,18 @@ final_merged_data[["sales_process_repeat"]] <- final_merged_data[["sales_process
     reasonsForSellingCoffee_aux == 5  ~ "personal_preference",
     reasonsForSellingCoffee_aux == 3  ~ "previous_relation",
     TRUE ~ reasonsForSellingCoffee_aux
+  )) %>%
+  mutate(receivedQualityBonus = case_when(
+    receivedQualityBonus == "1"  ~ "yes",
+    receivedQualityBonus == "2"  ~ "no",
+    receivedQualityBonus == "3"  ~ "no_answer",
+    TRUE ~ receivedQualityBonus
+  )) %>%
+  mutate(receivedQualityDiscount = case_when(
+    receivedQualityDiscount == "1"  ~ "yes",
+    receivedQualityDiscount == "2"  ~ "no",
+    receivedQualityDiscount == "3"  ~ "no_answer",
+    TRUE ~ receivedQualityDiscount
   ))
 
 final_merged_data[["mod_combined"]] <- final_merged_data[["mod_combined"]] %>%
