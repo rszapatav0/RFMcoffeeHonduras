@@ -100,11 +100,23 @@ df <- df %>%
     E4C  = as.numeric(E4C))
 
 
+#Matching to baseline (before dummy transformation)
+df <- df %>% mutate(
+  hasInternetAtHome = case_when(
+    hasInternetAtHome == 1  ~ "Y",
+    hasInternetAtHome %in% c(2, 3, 4) ~ "N",
+    hasInternetAtHome == 78 ~ "NS",
+    TRUE ~ NA_character_))
+
+
 #Turning dummies into 1 and 0
 binary_vars          <- dictionary %>% filter(is.na(el_loop)) %>% filter(!is.na(Binaria) & Binaria == 1) %>% pull(new)
 existing_binary_vars <- intersect(binary_vars, names(df))
-df <- df %>% mutate(
- across(all_of(existing_binary_vars), ~ ifelse(. %in% c("Y", "y", "yes", 1), 1, 0)))
+df <- df %>% mutate(across(
+  all_of(existing_binary_vars), ~ case_when(
+    . %in% c("Y", "y", "yes", 1) ~ 1,
+    . %in% c("N", "n", "no", 0) ~ 0,
+    TRUE ~ NA_real_)))
 
 
 # Standardize weights, distances and production

@@ -88,8 +88,11 @@ df <- df %>% filter(df$agreesToSurveyParticipation=="Y")
 # Turning dummies into 1 and 0
 binary_vars          <- dictionary %>% filter(is.na(bl_loop)) %>% filter(!is.na(Binaria) & Binaria == 1) %>% pull(new)
 existing_binary_vars <- intersect(binary_vars, names(df))
-df <- df %>% mutate(
-  across(all_of(existing_binary_vars), ~ ifelse(. %in% c("Y", "y", "yes", 1), 1, 0)))
+df <- df %>% mutate(across(
+  all_of(existing_binary_vars), ~ case_when(
+    . %in% c("Y", "y", "yes", 1) ~ 1,
+    . %in% c("N", "n", "no", 0) ~ 0,
+    TRUE ~ NA_real_)))
 
 
 # Adjusting numeric columns and creating dummies for multiple selection variables
