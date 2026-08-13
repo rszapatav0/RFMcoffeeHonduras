@@ -2,7 +2,7 @@
 #' Joining RFM 2023 baseline with RFM 2024 endline, and generating results
 #' Author:       Federico Ceballos
 #' Creation:     August, 2024
-#' Last edition: May, 2026
+#' Last edition: August, 2026
 #' Editor:       Raquel Sofía
 #' 
 #' This code: - Joins baseline with endline. 

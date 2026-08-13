@@ -2,7 +2,7 @@
 #' Processing the RFM 2023 baseline survey data
 #' Author:       Federico Ceballos
 #' Creation:     August, 2024
-#' Last edition: July, 2026
+#' Last edition: August, 2026
 #' Editor:       Raquel Sofía
 #' 
 #' This code:    Processes the Baseline database from baselineRaw.xlsx to 
@@ -163,6 +163,13 @@ df <- df %>% mutate(
   receivedQualityDiscountInter_typ = if_else(
     is.na(maximumReceivedPriceForCoffeeInKgGreenInter_typ), NA, receivedQualityDiscountInter_typ)
 )
+## Changing missing on usesWhatsAppForMessages:
+#' The household i) doesn't have mobile phone or ii) have mobile phone but doesn't have smartphone
+df <- df %>% mutate(
+  usesWhatsAppForMessages = case_when(
+    householdHasMobilePhone == 0 ~ 0,
+    hasSmartphone == 0 ~ 0,
+    TRUE ~ usesWhatsAppForMessages))
 
 
 # Save 

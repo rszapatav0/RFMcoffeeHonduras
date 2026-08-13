@@ -29,15 +29,18 @@ amountSoldInKgGreen_typ_baseline + maximumReceivedPriceForCoffeeInKgGreen_typ_ba
 
 # Setting parameters
 ## Controls
-controls <- ""
-controls_text <- "No"
-# controls <- "+ householdHasPipedWater_baseline + householdHasMobilePhone_baseline + hasInternetAtHome_baseline + yearsExperienceInCoffeeFarming_baseline + usesWhatsAppForMessages_baseline + registeredWithIHCAFE_baseline"
-# controls_text <- "Yes"
+# controls <- ""
+# controls_text <- "No"
+controls <- "+ householdHasPipedWater_baseline + householdHasMobilePhone_baseline + hasInternetAtHome_baseline + yearsExperienceInCoffeeFarming_baseline + usesWhatsAppForMessages_baseline + registeredWithIHCAFE_baseline"
+controls_text <- "Yes"
 ## Fixed effects
-fixed_effects <- ""
-fixed_effects_text <- "No"
-# fixed_effects <- " | sellsToIntermediary"
-# fixed_effects_text <- "Yes"
+# fixed_effects <- ""
+# fixed_effects_text <- "No"
+fixed_effects <- " | sellsToIntermediary"
+fixed_effects_text <- "Yes"
+
+# Robustness: excluiding communities
+data <- data %>% filter(!communityOrHamlet %in% c("nyork","zorca"))
 
 #' -----------------------------------------------------------------------------
 ## Intermediary outcomes: Adoption of practices --------------------------------
@@ -144,7 +147,7 @@ for (name in names(all_models)) {
   
   models <- all_models[[name]]
   modelsummary(models,
-    output = paste0("03_tables/harmonization/", name, "_Controls", controls_text, "_FE", fixed_effects_text, ".html"),
+    output = paste0("03_tables/harmonization/R", name, "_Controls", controls_text, "_FE", fixed_effects_text, ".html"),
     stars = c('*' = 0.10, '**' = 0.05, '***' = 0.01),
     gof_map = c("nobs", "adj.r.squared"),
     add_rows = bind_rows(
