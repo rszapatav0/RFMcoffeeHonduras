@@ -19,19 +19,19 @@ colnames(data) <- gsub("\\.", "/", colnames(data))
 #  REGRESSIONS  ----------------------------------------------------------------
 #' -----------------------------------------------------------------------------
 
-"unbalanced
-householdHasPipedWater_baseline + householdHasMobilePhone_baseline + hasInternetAtHome_baseline + yearsExperienceInCoffeeFarming_baseline +
-usesWhatsAppForMessages_baseline + registeredWithIHCAFE_baseline
-balanced: 
-householdConnectedToElectricity_baseline + hasMigratedInThePastYear_pop_baseline + adoptedRecommendedTechnologies_baseline
-(totalParcelAreaInHa_trr_baseline + totalAreaUsedForAgricultureInHa_baseline + coffeeAreaLastHarvestInHa_baseline) + 
-amountSoldInKgGreen_typ_baseline + maximumReceivedPriceForCoffeeInKgGreen_typ_baseline + minimumReceivedPriceForCoffeeInKgGreen_typ_baseline"
+covariates <- c(
+  "householdHasPipedWater","householdConnectedToElectricity","householdHasMobilePhone",
+  "hasInternetAtHome","hasMigratedInThePastYear_pop","yearsExperienceInCoffeeFarming",
+  "usesWhatsAppForMessages","registeredWithIHCAFE","adoptedRecommendedTechnologies",
+  "totalAreaUsedForAgricultureInHa","coffeeAreaLastHarvestInHa"
+  #"amountSoldInKgGreen_typ" ,"minimumReceivedPriceForCoffeeInKgGreen_typ","maximumReceivedPriceForCoffeeInKgGreen_typ"
+)
 
 # Setting parameters
 ## Controls
 # controls <- ""
 # controls_text <- "No"
-controls <- "+ householdHasPipedWater_baseline + householdHasMobilePhone_baseline + hasInternetAtHome_baseline + yearsExperienceInCoffeeFarming_baseline + usesWhatsAppForMessages_baseline + registeredWithIHCAFE_baseline"
+controls <- paste(" + ", paste(covariates, collapse = " + "))
 controls_text <- "Yes"
 ## Fixed effects
 # fixed_effects <- ""
@@ -39,8 +39,8 @@ controls_text <- "Yes"
 fixed_effects <- " | sellsToIntermediary"
 fixed_effects_text <- "Yes"
 
-# Robustness: excluiding communities
-data <- data %>% filter(!communityOrHamlet %in% c("nyork","zorca"))
+# Robustness: excluding communities
+#data <- data %>% filter(!communityOrHamlet %in% c("nyork","zorca"))
 
 #' -----------------------------------------------------------------------------
 ## Intermediary outcomes: Adoption of practices --------------------------------
@@ -147,7 +147,7 @@ for (name in names(all_models)) {
   
   models <- all_models[[name]]
   modelsummary(models,
-    output = paste0("03_tables/harmonization/R", name, "_Controls", controls_text, "_FE", fixed_effects_text, ".html"),
+    output = paste0("03_tables/harmonization/", name, "_Controls", controls_text, "_FE", fixed_effects_text, ".html"),
     stars = c('*' = 0.10, '**' = 0.05, '***' = 0.01),
     gof_map = c("nobs", "adj.r.squared"),
     add_rows = bind_rows(
@@ -159,11 +159,3 @@ for (name in names(all_models)) {
              !!!setNames(rep(list(controls_text), length(models)), names(models)))),
     notes = c("treatment1 = Quality Evaluation (QE); treatment2 = Technical Assistance (TA); treatment3 = QE + TA "))
 }
-
-
-
-
-# make df for lm_mod with 5 as the reference-period
-# base_ref_5 <- base_did %>% 
-#   mutate(period = as.factor(period)) %>% 
-#   mutate(period = relevel(period, ref = 5))

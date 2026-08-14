@@ -5,7 +5,8 @@
 #' Last edition: August, 2026
 #' Editor:       Raquel Sofía
 #' 
-#' This code: Processes the Endline database. 
+#' This code: Processes the Endline database from endlineRaw.xlsx to 
+#'               endlineAgg.csv 
 #'            
 #' Input:  - File "endlineRaw.xlsx", which is a copy from 
 #'         "Encuesta_de_Línea_Intermedia_Piloto_Transformando_Mercados_de_Café_-_all_versions_-_Español_es_-_2024-09-17-17-43-42.xlsx"

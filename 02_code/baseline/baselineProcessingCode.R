@@ -7,6 +7,11 @@
 #' 
 #' This code:    Processes the Baseline database from baselineRaw.xlsx to 
 #'               baselineAgg.csv
+#'               
+#' Input:  - File "baselineRaw.xlsx"
+#'         - File "dictionary.xlsx" updated for baseline variables
+#'         - File "baselineCorrections.xlsx" with the changes to include in the data
+#' Output: - File "baselineAgg.csv" with all baseline variables.
 #' ------------------------------------------------------------------------
 
 

@@ -79,9 +79,8 @@ covariates <- c(
   "householdHasPipedWater","householdConnectedToElectricity","householdHasMobilePhone",
   "hasInternetAtHome","hasMigratedInThePastYear_pop","yearsExperienceInCoffeeFarming",
   "usesWhatsAppForMessages","registeredWithIHCAFE","adoptedRecommendedTechnologies",
-  "totalParcelAreaInHa_trr","totalAreaUsedForAgricultureInHa","coffeeAreaLastHarvestInHa",
+  "totalAreaUsedForAgricultureInHa","coffeeAreaLastHarvestInHa",
   "amountSoldInKgGreen_typ" ,"minimumReceivedPriceForCoffeeInKgGreen_typ","maximumReceivedPriceForCoffeeInKgGreen_typ"
-  #"totalFarmAreaInHa_trr"
   )
 
 
