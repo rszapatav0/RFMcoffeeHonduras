@@ -1,9 +1,15 @@
-# packageList <- c("dplyr","readxl","purrr","tidyr","stringr","tidyverse","fuzzyjoin",
-#                  "kableExtra","stargazer","haven","fixest","modelsummary")
-# library(cobalt)
-# library(nnet)
-# library(broom)
-# library(table1)
+#' ------------------------------------------------------------------------
+#' Balance tests for RFM
+#' Author:       Raquel Sofía
+#' Creation:     August, 2026
+#' Last edition: August, 2026
+#' Editor:       Raquel Sofía
+#' 
+#' This code: Construct the balance tests for RFM.
+#'            It uses the sample from the baseline, but assign the treatment
+#'            based on the endline location (when observations didn't match
+#'            for baseline and endline, it uses baseline location).
+#' ------------------------------------------------------------------------
 
 
 #' ------------------------------------------------------------------------
@@ -34,7 +40,7 @@ endlineDF <- endlineDF %>%
   ) %>%
   select(surveyID, treatment, treatment_eng, communityOrHamlet) %>%
   rename(communityOrHamlet_baseline = communityOrHamlet)
-
+endlineDF$attrition <- 0
 
 # Joining treatment with baseline ids
 baselineDF <- read.csv("01_data/processed/baseline/baselineAgg.csv")
@@ -92,6 +98,10 @@ missTest <- df %>%
 
 # Keeping observations without missings
 #df <- df[complete.cases(df[, c(treatment_var, covariates)]), ]
+
+
+# For attrition
+df_attrition <- df %>% mutate(attrited = is.na(attrition))
 
 
 # Function to add stars
@@ -190,35 +200,18 @@ for (name in names(datasets)) {
              QE: Quality Evaluation, TA: Technical Assistance.", 
              general_title = "Note:") %>%
     save_kable(paste0("03_tables/baseline/balance_table_app_",name,".html"))
-  ## LaTeX
-  balance_table %>%
-    kbl(format = "latex", booktabs = TRUE,
-        caption = "Balance Test Across Treatment Arms") %>%
-    footnote(general = "*** p$<$0.01, ** p$<$0.05, * p$<$0.10.
-             QE: Quality Evaluation, TA: Technical Assistance.",
-             general_title = "Note:", escape = FALSE) %>%
-    save_kable(paste0("03_tables/baseline/balance_table_app_",name,".tex"))
-  
+
   
   # Saving subtable
   ## HTML
-  balance_table %>%
-    select(c(Variable, Control, QE, TA, `QE+TA`, p_value)) %>%
-    kbl(caption = "Balance Test Across Treatment Arms") %>%
-    kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) %>%
-    footnote(general = "*** p<0.01, ** p<0.05, * p<0.10. 
-             QE: Quality Evaluation, TA: Technical Assistance.", 
-             general_title = "Note:") %>%
-    save_kable(paste0("03_tables/baseline/balance_table_",name,".html"))
-  ## LaTeX
-  balance_table %>%
-    select(c(Variable, Control, QE, TA, `QE+TA`, p_value)) %>%
-    kbl(format = "latex", booktabs = TRUE,
-        caption = "Balance Test Across Treatment Arms") %>%
-    footnote(general = "*** p$<$0.01, ** p$<$0.05, * p$<$0.10.
-             QE: Quality Evaluation, TA: Technical Assistance.",
-             general_title = "Note:", escape = FALSE) %>%
-    save_kable(paste0("03_tables/baseline/balance_table_",name,".tex"))
+  # balance_table %>%
+  #   select(c(Variable, N, Control, QE, TA, `QE+TA`, p_value)) %>%
+  #   kbl(caption = "Balance Test Across Treatment Arms") %>%
+  #   kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) %>%
+  #   footnote(general = "*** p<0.01, ** p<0.05, * p<0.10. 
+  #            QE: Quality Evaluation, TA: Technical Assistance.", 
+  #            general_title = "Note:") %>%
+  #   save_kable(paste0("03_tables/baseline/balance_table_",name,".html"))
 
 }
 
@@ -235,3 +228,69 @@ for (name in names(datasets)) {
 # print(joint_test)
 # cat("\nIf this p-value is > 0.05, covariates do not jointly predict",
 #     "treatment assignment -- consistent with successful randomization.\n\n")
+
+
+
+#' ------------------------------------------------------------------------
+# Attrition --------------------------------------------------------------
+#' ------------------------------------------------------------------------
+
+# Attrition rates
+rates <- df_attrition %>%
+  group_by(treatment) %>%
+  summarise(
+    attrition = mean(attrited),
+    n = n(),
+    .groups = "drop"
+  )
+
+# P-values: each treatment vs control
+pvals <- sapply(1:3, function(t) {
+  x <- df_attrition$attrited[df_attrition$treatment == t]
+  y <- df_attrition$attrited[df_attrition$treatment == 0]
+  
+  prop.test(
+    c(sum(x), sum(y)),
+    c(length(x), length(y))
+  )$p.value
+})
+
+pval_stars <- function(p) {
+  ifelse(
+    p < 0.01, "***",
+    ifelse(p < 0.05, "**",
+           ifelse(p < 0.10, "*", ""))
+  )
+}
+
+attrition_table <- tibble(
+  Statistic = c("Share attrition", "p-value (Control vs Treatment)", "Number of observations"),
+  Control = c(
+    round(rates$attrition[rates$treatment == 0],3),
+    "-",
+    rates$n[rates$treatment == 0]
+  ),
+  `Quality Evaluation (QE)` = c(
+    round(rates$attrition[rates$treatment == 1],3),
+    paste0(sprintf("%.3f", pvals[1]), pval_stars(pvals[1])),
+    rates$n[rates$treatment == 1]
+  ),
+  `Technical Assistance (TA)` = c(
+    round(rates$attrition[rates$treatment == 2],3),
+    paste0(sprintf("%.3f", pvals[2]), pval_stars(pvals[2])),
+    rates$n[rates$treatment == 2]
+  ),
+  `QE + TA` = c(
+    round(rates$attrition[rates$treatment == 3],3),
+    paste0(sprintf("%.3f", pvals[3]), pval_stars(pvals[3])),
+    rates$n[rates$treatment == 3]
+  )
+)
+
+kable(
+  attrition_table,
+  format = "html",
+  escape = FALSE,
+  caption = "Attrition by Treatment Group"
+) |>
+  writeLines("03_tables/baseline/attrition_table.html")

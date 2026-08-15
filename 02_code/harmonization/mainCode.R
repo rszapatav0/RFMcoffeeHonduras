@@ -75,6 +75,10 @@ colnames(wideDF) <- gsub("\\.", "/", colnames(wideDF))
 # results <- run_regression_models(
 #   var_dict_file, wideDF, paste0(tables_output, "/model_summaries.html"))
 
+# Regressions for working paper
+source("02_code/harmonization/workingPaperRegressions.R")
+
+
 
 #' ------------------------------------------------------------------------
 # Graphs (longDF) ---------------------------------------------------------

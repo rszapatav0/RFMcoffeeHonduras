@@ -126,8 +126,8 @@ df$timeBetweenHarvestAndPulpingDiff  <- abs(df$timeBetweenHarvestAndPulping-0)
 df$timeBetweenPulpingAndWashingDiff  <- abs(df$timeBetweenPulpingAndWashing-15)
 df$timeFromWashingToDryCoffeeDiff    <- abs(df$timeFromWashingToDryCoffee-30) #mean
 ### Distance to the "gold" range (no substantial differences inside the range)
-df$timeBetweenHarvestAndDeliveryDiffr <- pmax(df$timeBetweenHarvestAndDelivery-6, 0)
-df$timeBetweenHarvestAndPulpingDiffr  <- pmax(df$timeBetweenHarvestAndPulping-6, 0)
+df$timeBetweenHarvestAndDeliveryDiffr <- pmax(df$timeBetweenHarvestAndDelivery-8, 0)
+df$timeBetweenHarvestAndPulpingDiffr  <- pmax(df$timeBetweenHarvestAndPulping-8, 0)
 df$timeBetweenPulpingAndWashingDiffr  <- pmax(14-df$timeBetweenPulpingAndWashing,0) + pmax(df$timeBetweenPulpingAndWashing-16,0)
 df$timeFromWashingToDryCoffeeDiffr    <- pmax(6-df$timeFromWashingToDryCoffee,0) + pmax(df$timeFromWashingToDryCoffee-36,0)
 ## Probability of selling to the intermediary

@@ -153,6 +153,17 @@ df <- df %>%
             `landLegalStatusForCultivation/rent_out_land_trr`, `landLegalStatusForCultivation/communal_land_trr`))
 
 
+# Replacing for zero People who didn't produced last harvest
+vars <- c(
+  "amountOfCoffeeProducedLastHarvestInKgGreen","amountSoldInKgGreen_typ",
+  "amountSoldInKgGreenInter_typ","numberDifferentBuyersLastHarvest")
+for (var in vars) {
+  df[[var]][df$producedCoffeeLastHarvest2 == 0] <- 0
+}
+df$amountSoldInKgGreen_typ      <- replace(df$amountSoldInKgGreen_typ, df$numberDifferentBuyersLastHarvest==0, 0)
+df$amountSoldInKgGreenInter_typ <- replace(df$amountSoldInKgGreenInter_typ, df$numberDifferentBuyersLastHarvest==0, 0)
+
+
 # Creating new variables
 ## Yield and density
 df$yieldKgPerHa       <- ifelse(df$coffeeAreaLastHarvestInHa_trr == 0,
@@ -166,8 +177,8 @@ df$timeBetweenHarvestAndPulpingDiff  <- abs(df$timeBetweenHarvestAndPulping-0)
 df$timeBetweenPulpingAndWashingDiff  <- abs(df$timeBetweenPulpingAndWashing-15) #mode
 df$timeFromWashingToDryCoffeeDiff    <- abs(df$timeFromWashingToDryCoffee-30) #mean
 ### Distance to the "gold" range (no substantial differences inside the range)
-df$timeBetweenHarvestAndDeliveryDiffr <- pmax(df$timeBetweenHarvestAndDelivery-6, 0)
-df$timeBetweenHarvestAndPulpingDiffr  <- pmax(df$timeBetweenHarvestAndPulping-6, 0)
+df$timeBetweenHarvestAndDeliveryDiffr <- pmax(df$timeBetweenHarvestAndDelivery-8, 0)
+df$timeBetweenHarvestAndPulpingDiffr  <- pmax(df$timeBetweenHarvestAndPulping-8, 0)
 df$timeBetweenPulpingAndWashingDiffr  <- pmax(14-df$timeBetweenPulpingAndWashing,0) + pmax(df$timeBetweenPulpingAndWashing-16,0)
 df$timeFromWashingToDryCoffeeDiffr    <- pmax(6-df$timeFromWashingToDryCoffee,0) + pmax(df$timeFromWashingToDryCoffee-36,0)
 ## Probability of selling to the intermediary
