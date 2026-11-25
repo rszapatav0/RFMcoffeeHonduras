@@ -24,7 +24,7 @@ rm(list=ls())
 
 # Treatment assignment file
 matching_columns <- c("communityOrHamlet", "municipality", "department")
-ttmAssign <- read.csv("01_data/raw/implementation/ttmAssign.csv", stringsAsFactors = FALSE) %>%
+ttmAssign <- read.csv("01_data/raw/implementation/ttmAssign.csv", stringsAsFactors = FALSE, sep=";") %>%
   select(-sellsToIntermediary) %>%
   mutate(across(all_of(matching_columns), ~replace_na(., "")))
 
@@ -86,7 +86,10 @@ covariates <- c(
   "hasInternetAtHome","hasMigratedInThePastYear_pop","yearsExperienceInCoffeeFarming",
   "usesWhatsAppForMessages","registeredWithIHCAFE","adoptedRecommendedTechnologies",
   "totalAreaUsedForAgricultureInHa","coffeeAreaLastHarvestInHa",
-  "amountSoldInKgGreen_typ" ,"minimumReceivedPriceForCoffeeInKgGreen_typ","maximumReceivedPriceForCoffeeInKgGreen_typ"
+  "numberDifferentBuyersLastHarvest","probSellInter","percSellInter",
+  "amountSoldInKgGreen_typ" ,"minimumReceivedPriceForCoffeeInKgGreen_typ","maximumReceivedPriceForCoffeeInKgGreen_typ",
+  "amountSoldInKgGreenInter_typ" ,"minimumReceivedPriceForCoffeeInKgGreenInter_typ","maximumReceivedPriceForCoffeeInKgGreenInter_typ",
+  "timeBetweenHarvestAndDeliveryDiffr","timeBetweenHarvestAndPulpingDiffr","timeBetweenPulpingAndWashingDiffr"
   )
 
 

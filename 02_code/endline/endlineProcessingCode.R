@@ -189,7 +189,7 @@ df$percSellInter <- df$amountSoldInKgGreenInter_typ / df$amountSoldInKgGreen_typ
 
 # Organizing location variables
 ## Reading treatment file
-ttmAssign  <- read.csv(ttmAssign_path, stringsAsFactors = FALSE) %>%
+ttmAssign  <- read.csv(ttmAssign_path, stringsAsFactors = FALSE, sep=";") %>%
   group_by(municipality_name, communityOrHamlet_name) %>% slice(1) %>% 
   ungroup() %>% rename_with(~ paste0(.x, "_ttm"))
 ## Creating auxiliar variables
@@ -199,8 +199,17 @@ df <- df %>% left_join(ttmAssign, by = c("municipality_name_ttm", "communityOrHa
 df <- df %>% mutate(
   department        = coalesce(department, department_ttm),
   municipality      = coalesce(municipality, municipality_ttm),
-  communityOrHamlet = coalesce(communityOrHamlet, communityOrHamlet_ttm)
-) %>% select(-ends_with("_ttm"))
+  communityOrHamlet = coalesce(communityOrHamlet, communityOrHamlet_ttm))
+## Ranking variables
+df$rankingInter <- df$rankingInter_ttm
+df <- df %>% mutate(
+  rankingInterTop3  = if_else(
+    rankingInter_ttm<=3  & !is.na(rankingInter_ttm) & department %in% c("stabarbara","lempira"), 1, 0),
+  rankingInterTop5  = if_else(
+    rankingInter_ttm<=5  & !is.na(rankingInter_ttm) & department %in% c("stabarbara","lempira"), 1, 0),
+  rankingInterTop10 = if_else(
+    rankingInter_ttm<=10 & !is.na(rankingInter_ttm) & department %in% c("stabarbara","lempira"), 1, 0)
+  )  %>% select(-ends_with("_ttm"))
 
 
 # Other changes

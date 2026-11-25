@@ -70,7 +70,7 @@ combine_datasets <- function(baseline_path, endline_path, id_column = "surveyID"
   baselineDF <- read.csv(baseline_path, stringsAsFactors = FALSE)
   endlineDF  <- read.csv(endline_path, stringsAsFactors = FALSE)
   dictionary <- read.csv(dictionary_path)
-  ttmAssign  <- read.csv(ttmAssign_path, stringsAsFactors = FALSE)  # Read the ttmAssign CSV file
+  ttmAssign  <- read.csv(ttmAssign_path, stringsAsFactors = FALSE, sep=";")  # Read the ttmAssign CSV file
   
   # Replace all dots (.) with slashes (/) in the column names
   ## Note: this issue sometimes occurs when saving the ...Agg.csv's. 
@@ -107,7 +107,7 @@ combine_datasets <- function(baseline_path, endline_path, id_column = "surveyID"
     
     # Replace NA values for matching columns in ttmAssign
     ttmAssign <- ttmAssign %>%
-      select(-sellsToIntermediary) %>%
+      select(-c(sellsToIntermediary,rankingInter)) %>%
       mutate(across(all_of(matching_columns), ~replace_na(., "")))
     
     # Simple join
